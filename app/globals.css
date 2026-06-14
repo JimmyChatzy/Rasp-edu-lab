@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.dark body,
+body.dark {
+  background-color: #0f172a;
+  color: #e2e8f0;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: system-ui, -apple-system, sans-serif;
+}

@@ -1,0 +1,133 @@
+You are working on an existing Next.js project that is already implemented.
+
+⚠️ IMPORTANT RULE:
+Do NOT recreate the project from scratch.
+Do NOT refactor everything.
+Only extend and modify existing code safely.
+
+Keep the current structure, pages, and logic.
+
+🎯 GOAL OF THIS UPDATE
+
+We are upgrading the existing Raspberry Pi educational teaching scenario platform with:
+
+Improved TeachingScenario data model
+Classroom image upload + gallery
+Dark mode toggle
+Minor UI adjustments to support new fields
+🧱 1. UPDATE DATA MODEL (IMPORTANT)
+
+Update the existing TeachingScenario type ONLY (do not duplicate it).
+
+Replace/extend it with:
+
+type TeachingScenario = {
+  id: string;
+
+  // Core fields (keep existing)
+  title: string;
+  description: string;
+  gradeLevel: string;
+  subjects: string[];
+  difficulty: number;
+  duration: number;
+  idea: string;
+  content: string;
+
+  // Optional metadata
+  equipment?: string;
+  curriculumConnection?: string;
+
+  // Teaching design (optional)
+  teachingDesign?: {
+    prerequisiteKnowledge?: string;
+    learningOutcomes?: string;
+    teachingMethod?: string;
+    classOrganization?: string;
+    lessonStages?: string;
+  };
+
+  // Assessment (optional)
+  assessment?: {
+    methodology?: string;
+    tools?: string;
+  };
+
+  // NEW: Images
+  images?: string[]; // base64 encoded images
+
+  // System fields
+  authorName?: string;
+  createdAt?: string;
+};
+📸 2. ADD IMAGE UPLOAD FEATURE (NEW)
+Requirements:
+Update existing Create Scenario form
+Add multi-image upload input
+Convert images to base64
+Store inside images[] field
+UI behavior:
+show preview thumbnails before submit
+allow multiple image selection
+simple file input (NO external libraries)
+🖼️ 3. ADD IMAGE GALLERY (NEW)
+
+On /scenario/[id] page:
+
+Display images if images exists
+Simple grid layout (2–4 columns)
+Click to enlarge (simple modal or fullscreen view)
+No external UI libraries
+🌙 4. ADD DARK MODE (NEW)
+
+Implement global dark mode:
+
+Requirements:
+toggle in navbar
+use Tailwind dark mode (class strategy)
+persist preference in localStorage
+default is light mode
+Behavior:
+all pages must support dark mode styling
+keep UI simple and readable (no fancy themes)
+🧭 5. UI ADJUSTMENTS (MINOR ONLY)
+
+Update existing UI to support:
+
+image gallery section in scenario page
+collapsible sections remain unchanged
+ensure layout does not break with new fields
+⚠️ 6. IMPORTANT CONSTRAINTS
+DO NOT rewrite the project
+DO NOT change routing structure
+DO NOT introduce heavy libraries
+DO NOT overengineer state management
+Keep everything simple and MVP-level
+🧠 7. DESIGN PRINCIPLE
+
+This is an educational MVP platform for teachers in Greece.
+
+Priority order:
+
+simplicity
+readability
+stability
+features
+
+NOT:
+
+scalability
+micro-architecture
+enterprise design
+🚀 8. FINAL GOAL
+
+After update, the system must:
+
+still work exactly as before
+support scenario creation
+support scenario viewing + filtering
+support comments
+now also support:
+image uploads per scenario
+image gallery display
+dark mode toggle
