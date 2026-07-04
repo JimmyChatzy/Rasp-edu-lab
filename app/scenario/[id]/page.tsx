@@ -79,6 +79,23 @@ export default async function ScenarioPage({ params }: ScenarioPageProps) {
           </section>
         )}
 
+        {scenario.tinkercadLink && (
+          <section className="border-t border-slate-100 pt-4 dark:border-slate-700">
+            <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">Tinkercad</h2>
+            <a
+              href={scenario.tinkercadLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded bg-blue-700 px-4 py-2 text-sm text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              Άνοιγμα κυκλώματος στο Tinkercad ↗
+            </a>
+          </section>
+        )}
+
         <section className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-700">
           <div>
             <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">Εξοπλισμός</h2>

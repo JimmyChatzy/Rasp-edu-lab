@@ -169,6 +169,21 @@ export default async function CreatePage() {
           </p>
         </label>
 
+        <label className="block text-sm">
+          <span className="mb-1 block text-slate-700 dark:text-slate-300">
+            Σύνδεσμος Tinkercad (προαιρετικό)
+          </span>
+          <input
+            name="tinkercadLink"
+            type="url"
+            placeholder="https://www.tinkercad.com/..."
+            className="w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+          />
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Επικολλήστε έναν σύνδεσμο από το Tinkercad για να δείξετε το κύκλωμά σας.
+          </p>
+        </label>
+
         <div className="flex gap-3">
           <button
             type="submit"

@@ -38,6 +38,7 @@ export async function createScenarioAction(formData: FormData) {
     idea: String(formData.get("idea") || "").trim(),
     content: String(formData.get("content") || "").trim(),
     images: imageEntries.length > 0 ? imageEntries : undefined,
+    tinkercadLink: String(formData.get("tinkercadLink") || "").trim() || undefined,
     createdAt: new Date().toISOString(),
     authorName: session?.name ?? (guestName || "Επισκέπτης"),
     authorId: session?.userId,

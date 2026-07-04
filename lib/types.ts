@@ -37,6 +37,9 @@ export type TeachingScenario = {
   // Images
   images?: string[]; // base64 encoded images
 
+  // Tinkercad schematic link
+  tinkercadLink?: string;
+
   // System fields
   authorName?: string;
   authorId?: string;
