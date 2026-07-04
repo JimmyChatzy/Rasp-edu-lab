@@ -7,7 +7,7 @@ export default async function Navbar() {
   const session = await getSession();
 
   return (
-    <header className="border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
         <Link href="/" className="text-lg font-semibold text-slate-800 dark:text-slate-100">
           Raspberry Pi Εκπαίδευση
