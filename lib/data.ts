@@ -1,67 +1,132 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { scenarios, comments, users } from "@/db/schema";
 import type { Comment, TeachingScenario, User } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-
-async function readJson<T>(file: string): Promise<T> {
-  const filePath = path.join(DATA_DIR, file);
-  const raw = await fs.readFile(filePath, "utf-8");
-  return JSON.parse(raw) as T;
-}
-
-async function writeJson<T>(file: string, data: T): Promise<void> {
-  const filePath = path.join(DATA_DIR, file);
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), "utf-8");
+function rowToScenario(row: typeof scenarios.$inferSelect): TeachingScenario {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    gradeLevel: row.gradeLevel as TeachingScenario["gradeLevel"],
+    subjects: JSON.parse(row.subjects) as string[],
+    difficulty: row.difficulty as TeachingScenario["difficulty"],
+    duration: row.duration,
+    idea: row.idea,
+    content: row.content,
+    equipment: row.equipment ?? undefined,
+    curriculumConnection: row.curriculumConnection ?? undefined,
+    teachingDesign: row.teachingDesign ? JSON.parse(row.teachingDesign) : undefined,
+    assessment: row.assessment ? JSON.parse(row.assessment) : undefined,
+    images: row.images ? (JSON.parse(row.images) as string[]) : undefined,
+    tinkercadLink: row.tinkercadLink ?? undefined,
+    authorName: row.authorName ?? undefined,
+    authorId: row.authorId ?? undefined,
+    createdAt: row.createdAt ?? undefined,
+  };
 }
 
 export async function getScenarios(): Promise<TeachingScenario[]> {
-  return readJson<TeachingScenario[]>("scenarios.json");
+  const rows = await db.select().from(scenarios).orderBy(scenarios.createdAt);
+  return rows.map(rowToScenario);
 }
 
 export async function getScenarioById(id: string): Promise<TeachingScenario | undefined> {
-  const scenarios = await getScenarios();
-  return scenarios.find((scenario) => scenario.id === id);
+  const rows = await db.select().from(scenarios).where(eq(scenarios.id, id)).limit(1);
+  return rows.length > 0 ? rowToScenario(rows[0]) : undefined;
 }
 
 export async function createScenario(scenario: TeachingScenario): Promise<void> {
-  const scenarios = await getScenarios();
-  scenarios.unshift(scenario);
-  await writeJson("scenarios.json", scenarios);
+  await db.insert(scenarios).values({
+    id: scenario.id,
+    title: scenario.title,
+    description: scenario.description,
+    gradeLevel: scenario.gradeLevel,
+    subjects: JSON.stringify(scenario.subjects),
+    difficulty: scenario.difficulty,
+    duration: scenario.duration,
+    idea: scenario.idea,
+    content: scenario.content,
+    equipment: scenario.equipment ?? null,
+    curriculumConnection: scenario.curriculumConnection ?? null,
+    teachingDesign: scenario.teachingDesign ? JSON.stringify(scenario.teachingDesign) : null,
+    assessment: scenario.assessment ? JSON.stringify(scenario.assessment) : null,
+    images: scenario.images ? JSON.stringify(scenario.images) : null,
+    tinkercadLink: scenario.tinkercadLink ?? null,
+    authorName: scenario.authorName ?? null,
+    authorId: scenario.authorId ?? null,
+    createdAt: scenario.createdAt ?? null,
+  });
 }
 
 export async function getCommentsByScenarioId(scenarioId: string): Promise<Comment[]> {
-  const comments = await readJson<Comment[]>("comments.json");
-  return comments
-    .filter((comment) => comment.scenarioId === scenarioId)
-    .sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
+  const rows = await db
+    .select()
+    .from(comments)
+    .where(eq(comments.scenarioId, scenarioId))
+    .orderBy(comments.createdAt);
+  return rows.map((row) => ({
+    id: row.id,
+    scenarioId: row.scenarioId,
+    authorName: row.authorName,
+    text: row.text,
+    createdAt: row.createdAt,
+  }));
 }
 
 export async function createComment(comment: Comment): Promise<void> {
-  const comments = await readJson<Comment[]>("comments.json");
-  comments.push(comment);
-  await writeJson("comments.json", comments);
+  await db.insert(comments).values({
+    id: comment.id,
+    scenarioId: comment.scenarioId,
+    authorName: comment.authorName,
+    text: comment.text,
+    createdAt: comment.createdAt,
+  });
 }
 
 export async function getUsers(): Promise<User[]> {
-  return readJson<User[]>("users.json");
+  const rows = await db.select().from(users);
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    passwordHash: row.passwordHash,
+    name: row.name,
+    createdAt: row.createdAt,
+  }));
 }
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const users = await getUsers();
-  return users.find((user) => user.email === email.toLowerCase());
+  const rows = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email.toLowerCase()))
+    .limit(1);
+  return rows.length > 0
+    ? {
+        id: rows[0].id,
+        email: rows[0].email,
+        passwordHash: rows[0].passwordHash,
+        name: rows[0].name,
+        createdAt: rows[0].createdAt,
+      }
+    : undefined;
 }
 
 export async function createUser(user: User): Promise<void> {
-  const users = await getUsers();
-  users.push(user);
-  await writeJson("users.json", users);
+  await db.insert(users).values({
+    id: user.id,
+    email: user.email,
+    passwordHash: user.passwordHash,
+    name: user.name,
+    createdAt: user.createdAt,
+  });
 }
 
 export async function getScenariosByAuthorId(authorId: string): Promise<TeachingScenario[]> {
-  const scenarios = await getScenarios();
-  return scenarios.filter((scenario) => scenario.authorId === authorId);
+  const rows = await db
+    .select()
+    .from(scenarios)
+    .where(eq(scenarios.authorId, authorId))
+    .orderBy(scenarios.createdAt);
+  return rows.map(rowToScenario);
 }

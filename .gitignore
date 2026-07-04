@@ -36,6 +36,13 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local sqlite database
+local.db
+local.db-journal
+
+# drizzle migrations (keep the generated SQL, but ignore the journal)
+drizzle/meta/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
