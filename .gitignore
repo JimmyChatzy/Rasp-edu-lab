@@ -46,3 +46,14 @@ drizzle/meta/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# strapi admin
+/strapi/node_modules/
+/strapi/dist/
+/strapi/.tmp/
+/strapi/build/
+/strapi/.cache/
+/strapi/.strapi/
+/strapi/database/
+/strapi/public/uploads/
+/strapi/.env

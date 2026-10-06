@@ -16,7 +16,7 @@ export default function ScenarioListWithFilters({
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [gradeLevel, setGradeLevel] = useState("");
   const [difficulty, setDifficulty] = useState("");
-  const [subject, setSubject] = useState("");
+  // const [subject, setSubject] = useState("");
 
   const allSubjects = useMemo(() => {
     const subjectSet = new Set<string>();
@@ -26,20 +26,20 @@ export default function ScenarioListWithFilters({
     return Array.from(subjectSet).sort();
   }, [scenarios]);
 
-  const filtered = useMemo(() => {
-    return scenarios.filter((scenario) => {
-      if (gradeLevel && scenario.gradeLevel !== gradeLevel) {
-        return false;
-      }
-      if (difficulty && scenario.difficulty !== Number(difficulty)) {
-        return false;
-      }
-      if (subject && !scenario.subjects.includes(subject)) {
-        return false;
-      }
-      return true;
-    });
-  }, [scenarios, gradeLevel, difficulty, subject]);
+  // const filtered = useMemo(() => {
+  //   return scenarios.filter((scenario) => {
+  //     if (gradeLevel && scenario.gradeLevel !== gradeLevel) {
+  //       return false;
+  //     }
+  //     if (difficulty && scenario.difficulty !== Number(difficulty)) {
+  //       return false;
+  //     }
+  //     if (subject && !scenario.subjects.includes(subject)) {
+  //       return false;
+  //     }
+  //     return true;
+  //   });
+  // }, [scenarios, gradeLevel, difficulty, subject]);
 
   return (
     <div>
@@ -104,17 +104,17 @@ export default function ScenarioListWithFilters({
       </section>
 
       <p className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-        {filtered.length} σενάρια βρέθηκαν
+        {scenarios.length} σενάρια βρέθηκαν
       </p>
 
-      {filtered.length === 0 ? (
+      {scenarios.length === 0 ? (
         <p className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
           Δεν βρέθηκαν σενάρια με τα επιλεγμένα φίλτρα.
         </p>
       ) : (
         <div className="grid gap-4">
-          {filtered.map((scenario) => (
-            <ScenarioCard key={scenario.id} scenario={scenario} />
+          {scenarios.map((scenario) => (
+            <ScenarioCard key={scenario.id} scenario={{...scenario, documentId: 'test'}} />
           ))}
         </div>
       )}

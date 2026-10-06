@@ -16,6 +16,7 @@ export const scenarios = sqliteTable("scenarios", {
   assessment: text("assessment"), // JSON string
   images: text("images"), // JSON array of base64 strings
   tinkercadLink: text("tinkercad_link"),
+  extraFields: text("extra_fields"), // JSON object of admin-configured fields
   authorName: text("author_name"),
   authorId: text("author_id"),
   createdAt: text("created_at"),

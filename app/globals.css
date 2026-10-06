@@ -18,3 +18,154 @@ textarea,
 button {
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/* Rich text editor and display styles */
+.rich-text-editor {
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.rich-text-editor p {
+  margin: 0 0 0.5rem;
+}
+
+.rich-text-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor h1,
+.rich-text-editor h2,
+.rich-text-editor h3 {
+  font-weight: 600;
+  color: inherit;
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.rich-text-editor h1 {
+  font-size: 1.25rem;
+}
+
+.rich-text-editor h2 {
+  font-size: 1.125rem;
+}
+
+.rich-text-editor h3 {
+  font-size: 1rem;
+}
+
+.rich-text-editor ul,
+.rich-text-editor ol {
+  padding-left: 1.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.rich-text-editor ul {
+  list-style: disc;
+}
+
+.rich-text-editor ol {
+  list-style: decimal;
+}
+
+.rich-text-editor li {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text-editor strong {
+  font-weight: 700;
+}
+
+.rich-text-editor em {
+  font-style: italic;
+}
+
+.rich-text-editor s {
+  text-decoration: line-through;
+}
+
+.rich-text-editor .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #94a3b8;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.rich-text-editor a,
+.rich-text a {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.dark .rich-text-editor a,
+.dark .rich-text a {
+  color: #60a5fa;
+}
+
+.rich-text-editor img,
+.rich-text img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+  margin: 0.5rem 0;
+  display: block;
+}
+
+.rich-text h1,
+.rich-text h2,
+.rich-text h3 {
+  font-weight: 600;
+  color: inherit;
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+.rich-text h1 {
+  font-size: 1.25rem;
+}
+
+.rich-text h2 {
+  font-size: 1.125rem;
+}
+
+.rich-text h3 {
+  font-size: 1rem;
+}
+
+.rich-text p {
+  margin: 0 0 0.5rem;
+}
+
+.rich-text p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text ul,
+.rich-text ol {
+  padding-left: 1.5rem;
+  margin: 0 0 0.5rem;
+}
+
+.rich-text ul {
+  list-style: disc;
+}
+
+.rich-text ol {
+  list-style: decimal;
+}
+
+.rich-text li {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text strong {
+  font-weight: 700;
+}
+
+.rich-text em {
+  font-style: italic;
+}
+
+.rich-text s {
+  text-decoration: line-through;
+}

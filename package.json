@@ -13,8 +13,16 @@
   },
   "dependencies": {
     "@libsql/client": "^0.17.4",
+    "@strapi/client": "^1.6.2",
+    "@tiptap/extension-image": "^3.31.3",
+    "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/extension-placeholder": "^3.31.3",
+    "@tiptap/pm": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
+    "isomorphic-dompurify": "^3.19.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import CommentForm from "@/components/CommentForm";
 import CommentList from "@/components/CommentList";
 import ImageGallery from "@/components/ImageGallery";
+import RichTextDisplay from "@/components/renderer/fields/RichTextDisplay";
 import { getSession } from "@/lib/auth";
 import { getCommentsByScenarioId, getScenarioById } from "@/lib/data";
 
@@ -55,7 +56,7 @@ export default async function ScenarioPage({ params }: ScenarioPageProps) {
         <h1 className="mb-3 text-2xl font-semibold text-slate-800 dark:text-slate-100">
           {scenario.title}
         </h1>
-        <p className="mb-4 text-slate-600 dark:text-slate-400">{scenario.description}</p>
+        <RichTextDisplay content={scenario.description} className="mb-4" />
 
         <div className="mb-4 flex flex-wrap gap-2">
           {scenario.subjects.map((subject) => (
@@ -107,21 +108,17 @@ export default async function ScenarioPage({ params }: ScenarioPageProps) {
             <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
               Σύνδεση με πρόγραμμα σπουδών
             </h2>
-            <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
-              {scenario.curriculumConnection}
-            </p>
+            <RichTextDisplay content={scenario.curriculumConnection ?? ""} />
           </div>
           <div>
             <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">Ιδέα</h2>
-            <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">{scenario.idea}</p>
+            <RichTextDisplay content={scenario.idea} />
           </div>
           <div>
             <h2 className="mb-1 text-sm font-semibold text-slate-700 dark:text-slate-300">
               Περιεχόμενο / Βήματα
             </h2>
-            <p className="whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-400">
-              {scenario.content}
-            </p>
+            <RichTextDisplay content={scenario.content} />
           </div>
         </section>
       </article>

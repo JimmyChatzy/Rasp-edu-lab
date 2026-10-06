@@ -1,43 +1,53 @@
 import Link from "next/link";
-import type { TeachingScenario } from "@/lib/types";
 
 interface ScenarioCardProps {
-  scenario: TeachingScenario;
+  scenario: {
+    documentId: string;
+    title?: string;
+    difficulty?: string;
+    duration?: number;
+    author?: {
+      username?: string;
+    };
+    createdAt?: string;
+  };
 }
 
-export default function ScenarioCard({ scenario }: ScenarioCardProps) {
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export default function ScenarioCard({
+  scenario,
+}: ScenarioCardProps) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-        <span className="rounded bg-slate-100 px-2 py-1 dark:bg-slate-800 dark:text-slate-300">Τάξη {scenario.gradeLevel}</span>
-        <span className="rounded bg-slate-100 px-2 py-1 dark:bg-slate-800 dark:text-slate-300">
-          Δυσκολία {scenario.difficulty}/5
-        </span>
-        <span className="rounded bg-slate-100 px-2 py-1 dark:bg-slate-800 dark:text-slate-300">
-          {scenario.duration} λεπτά
-        </span>
-      </div>
-      <h2 className="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
-        <Link href={`/scenario/${scenario.id}`} className="hover:text-blue-700 dark:hover:text-blue-400">
-          {scenario.title}
-        </Link>
+    <article className="rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
+      <h2 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        {scenario.title || "Χωρίς τίτλο"}
       </h2>
-      <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
-        {scenario.description}
-      </p>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {scenario.subjects.map((subject) => (
-          <span
-            key={subject}
-            className="rounded bg-blue-50 px-2 py-1 text-xs text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-          >
-            {subject}
-          </span>
-        ))}
+
+      <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+        {scenario.difficulty && (
+          <p>
+            Δυσκολία: {scenario.difficulty}
+          </p>
+        )}
+
+        {scenario.duration != null && (
+          <p>
+            Διάρκεια: {scenario.duration}
+          </p>
+        )}
+
+        {scenario.author?.username && (
+          <p>
+            Δημιουργός: {scenario.author.username}
+          </p>
+        )}
       </div>
-      {scenario.authorName && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">Από: {scenario.authorName}</p>
-      )}
     </article>
   );
 }

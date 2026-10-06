@@ -1,3 +1,5 @@
+import { ScenarioFieldValue, ScenarioFieldView } from "@/components/renderer/types";
+
 export type GradeLevel = "Α" | "Β" | "Γ" | "Δ" | "Ε" | "ΣΤ";
 
 export type Difficulty = 1 | 2 | 3 | 4 | 5;
@@ -40,6 +42,9 @@ export type TeachingScenario = {
   // Tinkercad schematic link
   tinkercadLink?: string;
 
+  // Admin-configured fields from Strapi (name → value)
+  extraFields?: Record<string, string>;
+
   // System fields
   authorName?: string;
   authorId?: string;
@@ -55,14 +60,38 @@ export interface Comment {
 }
 
 export interface User {
-  id: string;
+  id: number;
+  documentId: string;
+  username: string;
   email: string;
-  passwordHash: string;
-  name: string;
-  createdAt: string;
+  confirmed: boolean;
+  blocked: boolean;
 }
 
 export interface Session {
-  userId: string;
   name: string;
+  userId: string;
+  jwt: string;
+}
+
+export interface ScenarioSchemaField {
+  name: string;
+  type: string;
+  required?: boolean;
+  options?: string[];
+  value?: ScenarioFieldValue;
+  view?: ScenarioFieldView;
+  onChange?: (value: ScenarioFieldValue) => void;
+  placeholder?: string;
+}
+
+export interface ScenarioSchemaTab {
+  label: string;
+  order: number | null | undefined;
+  fields: string[];
+}
+
+export interface ScenarioSchema {
+  fields: ScenarioSchemaField[];
+  tabs: ScenarioSchemaTab[];
 }

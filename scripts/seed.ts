@@ -30,6 +30,7 @@ async function seed() {
         assessment: item.assessment ? JSON.stringify(item.assessment) : null,
         images: item.images ? JSON.stringify(item.images) : null,
         tinkercadLink: item.tinkercadLink ?? null,
+        extraFields: item.extraFields ? JSON.stringify(item.extraFields) : null,
         authorName: item.authorName ?? null,
         authorId: item.authorId ?? null,
         createdAt: item.createdAt ?? null,

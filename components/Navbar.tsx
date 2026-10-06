@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import { logoutAction } from "@/app/actions/auth";
 import DarkModeToggle from "./DarkModeToggle";
+import { logoutAction } from "@/app/actions/auth";
 
 export default async function Navbar() {
   const session = await getSession();
@@ -15,6 +15,9 @@ export default async function Navbar() {
         <nav className="flex flex-wrap items-center gap-4 text-sm">
           <Link href="/" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
             Αρχική
+          </Link>
+          <Link href="/test-schema" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
+            Test Schema
           </Link>
           <Link href="/create" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
             Νέο Σενάριο

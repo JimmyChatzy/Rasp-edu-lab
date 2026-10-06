@@ -20,15 +20,36 @@ function rowToScenario(row: typeof scenarios.$inferSelect): TeachingScenario {
     assessment: row.assessment ? JSON.parse(row.assessment) : undefined,
     images: row.images ? (JSON.parse(row.images) as string[]) : undefined,
     tinkercadLink: row.tinkercadLink ?? undefined,
+    extraFields: row.extraFields ? JSON.parse(row.extraFields) : undefined,
     authorName: row.authorName ?? undefined,
     authorId: row.authorId ?? undefined,
     createdAt: row.createdAt ?? undefined,
   };
 }
 
+const STRAPI_URL =
+  process.env.STRAPI_URL ?? "http://localhost:1337";
+
 export async function getScenarios(): Promise<TeachingScenario[]> {
-  const rows = await db.select().from(scenarios).orderBy(scenarios.createdAt);
-  return rows.map(rowToScenario);
+  const response = await fetch(
+    `${STRAPI_URL}/api/scenario-designs?populate[author]=true&sort=createdAt:desc`,
+    {
+      cache: "no-store",
+      headers: {
+        "Authorization": "Bearer f282a0411ca308cd68062166d4093ed7dd33e4bd8808099de5ad61a10a30c6ad5fbeee81bd4c3a39a635c6c965cf4c8221869c774ab3a47a953093053c039a8bd66567c7072992116b34386c4a26727e8c4740bcb786dd1f0c19b11a3b00a6e89fa7c7567d46368c323b0a95a154c03aa614bd673551acb90147da8959849349"
+      }
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ?? "Failed to fetch scenarios"
+    );
+  }
+
+  return data.data;
 }
 
 export async function getScenarioById(id: string): Promise<TeachingScenario | undefined> {
@@ -53,6 +74,7 @@ export async function createScenario(scenario: TeachingScenario): Promise<void> 
     assessment: scenario.assessment ? JSON.stringify(scenario.assessment) : null,
     images: scenario.images ? JSON.stringify(scenario.images) : null,
     tinkercadLink: scenario.tinkercadLink ?? null,
+    extraFields: scenario.extraFields ? JSON.stringify(scenario.extraFields) : null,
     authorName: scenario.authorName ?? null,
     authorId: scenario.authorId ?? null,
     createdAt: scenario.createdAt ?? null,
@@ -103,12 +125,12 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     .limit(1);
   return rows.length > 0
     ? {
-        id: rows[0].id,
-        email: rows[0].email,
-        passwordHash: rows[0].passwordHash,
-        name: rows[0].name,
-        createdAt: rows[0].createdAt,
-      }
+      id: rows[0].id,
+      email: rows[0].email,
+      passwordHash: rows[0].passwordHash,
+      name: rows[0].name,
+      createdAt: rows[0].createdAt,
+    }
     : undefined;
 }
 
