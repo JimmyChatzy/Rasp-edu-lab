@@ -3,13 +3,35 @@
 import { comments, users } from "@/db/schema";
 //import type { Comment, TeachingScenario, User } from "./types";
 import type { ScenarioValues } from "@/components/renderer/types";
-
-const STRAPI_URL =
-  process.env.STRAPI_URL ?? "http://localhost:1337";
+import type { ScenarioSchema } from "@/components/renderer/types";
 
 export type StrapiScenario = ScenarioValues & {
   documentId: string;
 };
+
+export async function getScenarioSchema(
+  documentId: string
+): Promise<ScenarioSchema> {
+  const response = await fetch(
+    `${STRAPI_URL}/api/scenario-design/schema/${encodeURIComponent(documentId)}`,
+    { cache: "no-store" }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ?? "Failed to fetch scenario schema"
+    );
+  }
+
+  return data.data;
+}
+
+const STRAPI_URL =
+  process.env.STRAPI_URL ?? "http://localhost:1337";
+
+
 
 export async function getScenarios(): Promise<StrapiScenario[]> {
   const response = await fetch(

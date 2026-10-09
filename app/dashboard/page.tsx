@@ -2,8 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import ScenarioCard from "@/components/ScenarioCard";
 import { getSession } from "@/lib/auth";
-import { getScenariosByAuthorId } from "@/lib/data";
+import { getScenariosByAuthorId, getScenarioSchema } from "@/lib/data";
 import {getMe} from "@/lib/api/me";
+
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -12,11 +13,6 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  console.log("DASHBOARD SESSION:", {
-  userId: session.userId,
-  name: session.name,
-  hasJwt: Boolean(session.jwt),
-});
 
 const me = await getMe();
 
@@ -34,6 +30,13 @@ const meResponse = await fetch(
     session.userId,
     session.jwt
   );
+
+  const schema = scenarios.length
+    ? await getScenarioSchema(scenarios[0].documentId)
+    : { fields: [], tabs: [] };
+
+    console.log("SCHEMA:", JSON.stringify(schema, null, 2));
+console.log("SCENARIO DATA:", scenarios[0]);
 
   return (
     <div>
@@ -59,7 +62,12 @@ const meResponse = await fetch(
       ) : (
         <div className="grid gap-4">
           {scenarios.map((scenario) => (
-            <ScenarioCard key={scenario.documentId} scenario={scenario} />
+           <ScenarioCard
+              key={scenario.documentId}
+              scenario={scenario}
+              fields={schema.fields}
+          />
+           //<ScenarioCard key={scenario.documentId} scenario={scenario} />
           ))}
         </div>
       )}

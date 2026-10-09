@@ -5,6 +5,129 @@ interface ScenarioCardProps {
   scenario: ScenarioValues & {
     documentId: string;
   };
+  fields: Array<{
+    name: string;
+    label?: string;
+    type: string;
+    visible?: boolean;
+  }>;
+}
+
+function formatValue(value: unknown): string | undefined {
+  if (typeof value === "string" || typeof value === "number") {
+    return String(value);
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Ναι" : "Όχι";
+  }
+
+  if (Array.isArray(value)) {
+    return undefined;
+  }
+
+  if (value && typeof value === "object") {
+    if ("username" in value && typeof value.username === "string") {
+      return value.username;
+    }
+
+
+    if ("name" in value && typeof value.name === "string") {
+      return value.name;
+    }
+
+
+  }
+
+  return undefined;
+}
+
+export default function ScenarioCard({
+  scenario,
+  fields,
+}: ScenarioCardProps) {
+   const safeFields = Array.isArray(fields) ? fields : [];
+
+  const title = formatValue(scenario.title) ?? "Χωρίς τίτλο";
+
+console.log(
+  "CARD FIELD VALUES:",
+  safeFields.map((field) => ({
+    name: field.name,
+    type: field.type,
+    visible: field.visible,
+    value: scenario[field.name],
+  }))
+);
+
+const displayFields = safeFields.filter(
+  (field) =>
+    field.name !== "title" &&
+    !["documentId", "id", "createdAt", "updatedAt", "publishedAt"].includes(
+      field.name
+    ) &&
+    !["blocks", "richtext"].includes(field.type) &&
+    scenario[field.name] != null
+);
+/*
+  const displayFields = safeFields.filter(
+    (field) =>
+     /* field.visible !== false &&
+      field.name !== "title" &&
+      field.name !== "documentId" &&
+      field.name !== "id" &&
+      field.name !== "createdAt" &&
+      field.name !== "updatedAt" &&
+      field.name !== "publishedAt" &&
+      field.type !== "blocks" &&
+      field.type !== "richtext" &&
+      scenario[field.name] != null
+  
+ !["documentId", "id", "createdAt", "updatedAt", "publishedAt"].includes(
+      field.name
+    ) &&
+    !["blocks", "richtext"].includes(field.type) &&
+    scenario[field.name] != null
+      );
+*/
+  return (
+    <Link
+      href={`/scenarios/${encodeURIComponent(scenario.documentId)}`}
+      className="block"
+    > <article className="h-full rounded-xl border border-slate-200 bg-white p-5 transition hover:shadow-md dark:border-slate-700 dark:bg-slate-900"> <h2 className="mb-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
+      {title} </h2>
+
+
+        <div className="space-y-1 text-sm text-slate-600 dark:text-slate-400">
+          {displayFields.map((field) => {
+            const value = formatValue(scenario[field.name]);
+
+            if (!value) return null;
+
+            return (
+              <p key={field.name}>
+                {field.label ?? field.name}: {value}
+              </p>
+            );
+          })}
+        </div>
+      </article>
+    </Link>
+
+
+  );
+}
+
+
+
+
+/*import Link from "next/link";
+import type { ScenarioValues } from "@/components/renderer/types";
+
+interface ScenarioCardProps {
+  scenario: ScenarioValues & {
+    documentId: string;
+  };
 }
 
 function getString(value: unknown): string | undefined {
