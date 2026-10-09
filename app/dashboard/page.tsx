@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import ScenarioCard from "@/components/ScenarioCard";
 import { getSession } from "@/lib/auth";
 import { getScenariosByAuthorId } from "@/lib/data";
+import {getMe} from "@/lib/api/me";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -11,7 +12,28 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const scenarios = await getScenariosByAuthorId(session.userId);
+  console.log("DASHBOARD SESSION:", {
+  userId: session.userId,
+  name: session.name,
+  hasJwt: Boolean(session.jwt),
+});
+
+const me = await getMe();
+
+const meResponse = await fetch(
+  `${process.env.STRAPI_URL}/api/users/me`,
+  {
+    headers: {
+      Authorization: `Bearer ${session.jwt}`,
+    },
+    cache: "no-store",
+  }
+);
+
+  const scenarios = await getScenariosByAuthorId(
+    session.userId,
+    session.jwt
+  );
 
   return (
     <div>
@@ -37,7 +59,7 @@ export default async function DashboardPage() {
       ) : (
         <div className="grid gap-4">
           {scenarios.map((scenario) => (
-            <ScenarioCard key={scenario.id} scenario={scenario} />
+            <ScenarioCard key={scenario.documentId} scenario={scenario} />
           ))}
         </div>
       )}

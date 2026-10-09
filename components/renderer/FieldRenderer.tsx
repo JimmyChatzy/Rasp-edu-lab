@@ -1,7 +1,7 @@
 import Text from "./fields/Text";
 import Select from "./fields/Select";
 import NumberField from "./fields/NumberField";
-import MediaField from "./fields/MediaField";
+//import MediaField from "./fields/MediaField";
 
 import {
   ScenarioFieldValue,
@@ -51,6 +51,7 @@ export function FieldRenderer({
           view={field.view}
         />
       );
+      /*
     case "media":
       return (
         <MediaField
@@ -60,6 +61,7 @@ export function FieldRenderer({
           view={field.view}
         />
   );
+  */
     case "enumeration":
       return (
         <Select

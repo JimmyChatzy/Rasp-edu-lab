@@ -1,5 +1,5 @@
 import Link from "next/link";
-import ScenarioListWithFilters from "@/components/ScenarioListWithFilters";
+import ScenarioList from "@/components/ScenarioList";
 import { getScenarios } from "@/lib/data";
 
 export default async function HomePage() {
@@ -23,7 +23,7 @@ export default async function HomePage() {
         </Link>
       </section>
 
-      <ScenarioListWithFilters scenarios={scenarios} />
+      <ScenarioList scenarios={scenarios} />
     </div>
   );
 }

@@ -11,7 +11,7 @@ export async function getMe() {
   }
   
   const response = await fetch(
-    `${STRAPI_URL}/api/users/me`,
+    `${STRAPI_URL}/api/users/me?populate=role`,
     {
       headers: {
         Authorization: `Bearer ${session?.jwt}`,
@@ -21,13 +21,6 @@ export async function getMe() {
   );
 
   const data = await response.json();
-
-  console.log("GET ME RESPONSE:", {
-    status: response.status,
-    ok: response.ok,
-    data,
-  });
-
 
   if (!response.ok) {
     throw new Error(

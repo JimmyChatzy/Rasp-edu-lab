@@ -1,7 +1,135 @@
-import { eq } from "drizzle-orm";
-import { db } from "@/db";
-import { scenarios, comments, users } from "@/db/schema";
-import type { Comment, TeachingScenario, User } from "./types";
+//import { eq } from "drizzle-orm";
+//import { db } from "@/db";
+import { comments, users } from "@/db/schema";
+//import type { Comment, TeachingScenario, User } from "./types";
+import type { ScenarioValues } from "@/components/renderer/types";
+
+const STRAPI_URL =
+  process.env.STRAPI_URL ?? "http://localhost:1337";
+
+export type StrapiScenario = ScenarioValues & {
+  documentId: string;
+};
+
+export async function getScenarios(): Promise<StrapiScenario[]> {
+  const response = await fetch(
+    `${STRAPI_URL}/api/scenario-designs?populate[author]=true&sort=createdAt:desc`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ?? "Failed to fetch scenarios"
+    );
+  }
+
+  return data.data;
+}
+
+export async function getScenarioByDocumentId(
+  documentId: string
+): Promise<StrapiScenario> {
+  const response = await fetch(
+    `${STRAPI_URL}/api/scenario-designs/${documentId}?populate[author]=true`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ?? "Failed to fetch scenario"
+    );
+  }
+
+  return data.data;
+}
+
+
+export async function getScenariosByAuthorId(
+  authorId: string,
+  jwt: string
+): Promise<StrapiScenario[]> {
+ 
+  const params = new URLSearchParams();
+/*
+  params.set("filters[author][id][$eq]", authorId);
+  params.set("populate[author]", "true");
+  params.set("sort", "createdAt:desc");
+*/
+  const response = await fetch(
+     `${STRAPI_URL}/api/scenario-designs?populate[author]=true&sort=createdAt:desc`,
+    // `${STRAPI_URL}/api/scenario-designs?${params.toString()}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+   console.log("SCENARIO REQUEST:", {
+    status: response.status,
+    data,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      data?.error?.message ?? "Failed to fetch author's scenarios"
+    );
+  }
+
+  return data.data;
+}
+/*
+export async function getUsers(): Promise<User[]> {
+  const rows = await db.select().from(users);
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    passwordHash: row.passwordHash,
+    name: row.name,
+    createdAt: row.createdAt,
+  }));
+}
+
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  const rows = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email.toLowerCase()))
+    .limit(1);
+  return rows.length > 0
+    ? {
+      id: rows[0].id,
+      email: rows[0].email,
+      passwordHash: rows[0].passwordHash,
+      name: rows[0].name,
+      createdAt: rows[0].createdAt,
+    }
+    : undefined;
+}
+
+export async function createUser(user: User): Promise<void> {
+  await db.insert(users).values({
+    id: user.id,
+    email: user.email,
+    passwordHash: user.passwordHash,
+    name: user.name,
+    createdAt: user.createdAt,
+  });
+}
+
+
+
 
 function rowToScenario(row: typeof scenarios.$inferSelect): TeachingScenario {
   return {
@@ -106,43 +234,6 @@ export async function createComment(comment: Comment): Promise<void> {
   });
 }
 
-export async function getUsers(): Promise<User[]> {
-  const rows = await db.select().from(users);
-  return rows.map((row) => ({
-    id: row.id,
-    email: row.email,
-    passwordHash: row.passwordHash,
-    name: row.name,
-    createdAt: row.createdAt,
-  }));
-}
-
-export async function getUserByEmail(email: string): Promise<User | undefined> {
-  const rows = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
-  return rows.length > 0
-    ? {
-      id: rows[0].id,
-      email: rows[0].email,
-      passwordHash: rows[0].passwordHash,
-      name: rows[0].name,
-      createdAt: rows[0].createdAt,
-    }
-    : undefined;
-}
-
-export async function createUser(user: User): Promise<void> {
-  await db.insert(users).values({
-    id: user.id,
-    email: user.email,
-    passwordHash: user.passwordHash,
-    name: user.name,
-    createdAt: user.createdAt,
-  });
-}
 
 export async function getScenariosByAuthorId(authorId: string): Promise<TeachingScenario[]> {
   const rows = await db
@@ -152,3 +243,4 @@ export async function getScenariosByAuthorId(authorId: string): Promise<Teaching
     .orderBy(scenarios.createdAt);
   return rows.map(rowToScenario);
 }
+  */
