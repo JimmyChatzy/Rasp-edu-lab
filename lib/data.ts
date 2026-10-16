@@ -51,7 +51,7 @@ export async function getScenarios(): Promise<StrapiScenario[]> {
 
   return data.data;
 }
-
+/*
 export async function getScenarioByDocumentId(
   documentId: string
 ): Promise<StrapiScenario> {
@@ -72,7 +72,33 @@ export async function getScenarioByDocumentId(
 
   return data.data;
 }
+*/
 
+export async function getScenarioByDocumentId(documentId: string) {
+  const params = new URLSearchParams();
+  params.set("filters[documentId][$eq]", documentId);
+  params.set("populate[author]", "true");
+
+  const response = await fetch(
+    `${STRAPI_URL}/api/scenario-designs/?${params.toString()}`,
+    { cache: "no-store" }
+  );
+
+  const body = await response.json();
+
+  console.log("SCENARIO REQUEST (mine):", {
+    status: response.status,
+    body,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      body?.error?.message ?? "Failed to fetch scenario"
+    );
+  }
+
+  return body.data?.[0] ?? undefined;
+}
 
 export async function getScenariosByAuthorId(
   authorId: string,

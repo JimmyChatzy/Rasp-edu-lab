@@ -35,8 +35,8 @@ const meResponse = await fetch(
     ? await getScenarioSchema(scenarios[0].documentId)
     : { fields: [], tabs: [] };
 
-    console.log("SCHEMA:", JSON.stringify(schema, null, 2));
-console.log("SCENARIO DATA:", scenarios[0]);
+   // console.log("SCHEMA:", JSON.stringify(schema, null, 2));
+//console.log("SCENARIO DATA:", scenarios[0]);
 
   return (
     <div>
@@ -61,6 +61,12 @@ console.log("SCENARIO DATA:", scenarios[0]);
         </div>
       ) : (
         <div className="grid gap-4">
+          <Link
+            href="/create"
+            className="rounded bg-blue-700 px-4 py-2 text-sm text-white hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700"
+          >
+            Δημιουργία νέου σεναρίου
+          </Link>
           {scenarios.map((scenario) => (
            <ScenarioCard
               key={scenario.documentId}

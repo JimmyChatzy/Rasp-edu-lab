@@ -13,5 +13,5 @@ export async function createScenarioAction(values: ScenarioValues) {
   }
 
   await getMe();
-  await createScenarioDesign(values)
+  await createScenarioDesign(values);
 }

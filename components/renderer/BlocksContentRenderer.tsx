@@ -10,7 +10,7 @@ export default function BlocksContentRenderer( {content}: BlocksContentRendererP
   if (!content?.length) return null;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4">     
             <BlocksRenderer
                 content={content}
                 blocks={{
