@@ -33,6 +33,8 @@ export interface ScenarioSchemaField {
   type: string;
   required?: boolean;
   options?: string[];
+  multiple?: boolean;        // media: Strapi "Allow multiple files"
+  allowedTypes?: string[];   // media: ["images" | "files" | "videos" | "audios"]
   value?: ScenarioFieldValue;
   view?: ScenarioFieldView;
   onChange?: (value: ScenarioFieldValue) => void;

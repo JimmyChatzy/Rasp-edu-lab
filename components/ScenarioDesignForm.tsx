@@ -5,17 +5,12 @@ import { useState } from "react";
 import { ScenarioRenderer } from "./ScenarioRenderer";
 import { ScenarioSchema } from "@/lib/types";
 import { createScenarioAction } from "@/app/actions/scenarios";
-
-
+import type {ScenarioFieldValue, ScenarioValues} from "@/components/renderer/types"
+import { serializeValues, missingRequired } from "@/lib/serialize"
 
 interface ScenarioDesignFormProps {
   schema: ScenarioSchema;
 }
-
-type ScenarioValues = Record<
-  string,
-  string | number | boolean | null
->;
 
 export function ScenarioDesignForm({
   schema,
@@ -25,13 +20,8 @@ export function ScenarioDesignForm({
 
   function updateField(
     name: string,
-    value: string | number | boolean | null
+    value: ScenarioFieldValue
   ) {
-    console.log("FIELD UPDATE:", {
-      name,
-      value,
-      type: typeof value,
-    });
 
     setValues((current) => ({
       ...current,
@@ -62,18 +52,17 @@ async function handleSubmit(
 
     setError("Δεν ήταν δυνατή η αποθήκευση του σεναρίου.");
   }
+
+  const missing = missingRequired(schema, values);
+
+  if (missing.length) {
+    setError(`Συμπληρώστε τα υποχρεωτικά πεδία: ${missing.join(", ")}`);
+    return;
+  }
+
+  const result = await createScenarioAction(serializeValues(schema, values));
 }
 
-/*
-  async function handleSubmit(
-    event: React.SubmitEvent<HTMLFormElement>
-  ) {
-    event.preventDefault();
-
-    await createScenarioAction(values);
-    console.log("Scenario:", values);
-  }
-*/
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

@@ -54,9 +54,10 @@ export function ScenarioRenderer({
   const [activeTab, setActiveTab] = useState(
     schema.tabs[0]?.label ?? ""
   );
+  /*
   console.log("SCHEMA:", schema);
 console.log("ACTIVE TAB:", activeTab);
-console.log("VALUES:", values);
+console.log("VALUES:", values);*/
 
   return (
     <div className="space-y-6">

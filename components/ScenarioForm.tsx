@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import RichTextEditor from "./renderer/fields/RichTextEditor";
+import RichTextEditor from "./renderer/RichTextEditor";
 import type { ScenarioFieldConfig, ScenarioFieldTab } from "@/lib/strapi";
 
 interface ScenarioFormProps {

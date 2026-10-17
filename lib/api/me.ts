@@ -1,4 +1,10 @@
-import { getSession } from "@/lib/auth";
+import { strapiFetch } from "@/lib/strapi";
+
+export function getMe() {
+  return strapiFetch("/api/users/me?populate=role");
+}
+
+/*import { getSession } from "@/lib/auth";
 
 const STRAPI_URL =
   process.env.STRAPI_URL ?? "http://localhost:1337";
@@ -30,3 +36,4 @@ export async function getMe() {
 
   return data;
 }
+*/

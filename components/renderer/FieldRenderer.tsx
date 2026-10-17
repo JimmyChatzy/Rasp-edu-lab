@@ -1,13 +1,13 @@
 import Text from "./fields/Text";
 import Select from "./fields/Select";
 import NumberField from "./fields/NumberField";
-//import MediaField from "./fields/MediaField";
+import MediaField from "./fields/MediaField";
 
 import {
   ScenarioFieldValue,
   ScenarioSchemaField,
 } from "./types";
-import RichTextEditor from "./fields/RichTextEditor";
+import RichTextEditor from "./RichTextEditor";
 
 interface FieldRendererProps {
   field: ScenarioSchemaField;
@@ -20,12 +20,7 @@ export function FieldRenderer({
   value,
   onChange,
 }: FieldRendererProps) {
-  console.log("FIELD BEFORE RENDER:", {
-  name: field.name,
-  type: field.type,
-  view: field.view,
-  value,
-});
+  
   switch (field.type) {
     case "string":
       return (
@@ -46,22 +41,28 @@ export function FieldRenderer({
       return (
         <RichTextEditor
           name={field.name}
-          value={Array.isArray(value) ? value : []}
+          type={field.type}
+          required={field.required}
+          value={value}              // pass through untouched
           onChange={onChange}
           view={field.view}
         />
       );
-      /*
+
     case "media":
       return (
         <MediaField
           name={field.name}
+          type={field.type}
+          required={field.required}
+          multiple={field.multiple}
+          allowedTypes={field.allowedTypes}
           value={value}
           onChange={onChange}
           view={field.view}
         />
-  );
-  */
+      );
+
     case "enumeration":
       return (
         <Select
