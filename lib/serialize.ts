@@ -1,9 +1,11 @@
-// lib/serialize.ts
-import { ScenarioSchema } from "@/lib/types";
-import { ScenarioValues } from "@/components/renderer/types"; 
+import type { ScenarioFieldValue, ScenarioSchema, ScenarioValues } from "@/lib/types";
+import type { FieldErrors } from "@/lib/strapi/errors";
 
-export function serializeValues(schema: ScenarioSchema, values: ScenarioValues) {
-  const out: Record<string, unknown> = {};
+export type ScenarioPayload = Record<string, unknown>;
+
+// Form state → Strapi body. Media become ids; blocks pass through untouched.
+export function serializeValues(schema: ScenarioSchema, values: ScenarioValues): ScenarioPayload {
+  const out: ScenarioPayload = {};
   for (const field of schema.fields) {
     const v = values[field.name];
     if (v === undefined) continue;
@@ -18,13 +20,28 @@ export function serializeValues(schema: ScenarioSchema, values: ScenarioValues) 
   return out;
 }
 
-// Labels of required fields that are still empty (null, "", [] all count as empty)
-export function missingRequired(schema: ScenarioSchema, values: ScenarioValues): string[] {
-  return schema.fields
-    .filter((f) => f.required)
-    .filter((f) => {
-      const v = values[f.name];
-      return v == null || v === "" || (Array.isArray(v) && v.length === 0);
-    })
-    .map((f) => f.view?.label ?? f.name);
+// Strapi entry → form state (edit mode). Media always become arrays.
+export function toFormValues(schema: ScenarioSchema, entry: Record<string, unknown>): ScenarioValues {
+  const out: ScenarioValues = {};
+  for (const f of schema.fields) {
+    const v = entry[f.name];
+    if (v == null) continue;
+    out[f.name] =
+      f.type === "media"
+        ? ((Array.isArray(v) ? v : [v]) as Record<string, unknown>[])
+        : (v as ScenarioFieldValue);
+  }
+  return out;
+}
+
+export function validateRequired(schema: ScenarioSchema, values: ScenarioValues): FieldErrors {
+  const errors: FieldErrors = {};
+  for (const f of schema.fields) {
+    if (!f.required) continue;
+    const v = values[f.name];
+    if (v == null || v === "" || (Array.isArray(v) && v.length === 0)) {
+      errors[f.name] = "Το πεδίο είναι υποχρεωτικό.";
+    }
+  }
+  return errors;
 }

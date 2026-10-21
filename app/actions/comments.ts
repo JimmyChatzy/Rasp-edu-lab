@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
-import { createComment } from "@/lib/data";
+import { createComment } from "@/features/scenarios/api";
 
 export async function createCommentAction(formData: FormData) {
   const session = await getSession();

@@ -1,0 +1,1 @@
+export const SCENARIO_SCHEMA_ID = process.env.SCENARIO_SCHEMA_ID ?? "";
