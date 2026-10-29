@@ -1,4 +1,3 @@
-import { strapi } from "@strapi/client"
 import { getSession } from "@/lib/auth";
 import { ApiError, ForbiddenError, UnauthorizedError } from "./errors";
 
@@ -37,8 +36,3 @@ export async function strapiFetch<T>(
   }
   return data as T;
 }
-
-export const strapiClient = strapi({
-  baseURL: `${STRAPI_URL}/api`,
-  auth: process.env.STRAPI_API_TOKEN
-});

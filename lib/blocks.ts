@@ -5,14 +5,14 @@ export { mediaUrl } from "./media";
 type TNode = { type: string; attrs?: any; content?: TNode[]; text?: string; marks?: { type: string; attrs?: any }[] };
 type Block = Record<string, any>;
 
-//const MEDIA_BASE = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337";
+// Display size of an image block, in % of the text column. Stored on the block as `displayWidth`
+// (Strapi's blocks validator keeps extra keys); `image.width` stays the file's pixel width.
+export const IMAGE_WIDTHS = [25, 50, 75, 100] as const;
+export type ImageWidth = (typeof IMAGE_WIDTHS)[number];
 
-// Local upload provider returns "/uploads/x.png"; cloud providers return absolute URLs.
-/*
-export function mediaUrl(url?: string | null): string {
-  if (!url) return "";
-  return /^https?:\/\//.test(url) ? url : `${MEDIA_BASE}${url}`;
-}*/
+export function toImageWidth(value: unknown): ImageWidth {
+  return IMAGE_WIDTHS.find((w) => w === value) ?? 100;
+}
 
 const MARK_TO_MODIFIER: Record<string, string> = {
   bold: "bold", italic: "italic", underline: "underline", strike: "strikethrough", code: "code",
@@ -63,7 +63,12 @@ function nodeToBlocks(n: TNode): Block[] {
     case "codeBlock":  return [{ type: "code", children: [{ type: "text", text: n.content?.map((t) => t.text).join("") ?? "" }] }];
     case "strapiImage":
       return n.attrs?.file
-        ? [{ type: "image", image: n.attrs.file, children: [{ type: "text", text: "" }] }]
+        ? [{
+            type: "image",
+            image: n.attrs.file,
+            ...(n.attrs.displayWidth !== 100 && { displayWidth: toImageWidth(n.attrs.displayWidth) }),
+            children: [{ type: "text", text: "" }],
+          }]
         : [];
     default: return [];
   }
@@ -110,7 +115,12 @@ function blockToDoc(b: Block): TNode | null {
       return b.image
         ? {
             type: "strapiImage",
-            attrs: { file: b.image, src: mediaUrl(b.image.url), alt: b.image.alternativeText ?? b.image.name ?? "" },
+            attrs: {
+              file: b.image,
+              src: mediaUrl(b.image.url),
+              alt: b.image.alternativeText ?? b.image.name ?? "",
+              displayWidth: toImageWidth(b.displayWidth),
+            },
           }
         : null;
     case "list":

@@ -1,0 +1,21 @@
+[Unit]
+Description=Raspberry Pi Edu - Strapi CMS
+After=network.target mariadb.service
+Requires=mariadb.service
+
+[Service]
+Type=simple
+User=raspedu
+Group=raspedu
+WorkingDirectory=/opt/raspedu/strapi
+Environment=NODE_ENV=production
+# Settings come from /opt/raspedu/strapi/.env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

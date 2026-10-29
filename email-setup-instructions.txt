@@ -1,0 +1,45 @@
+EMAIL NOTIFICATION WHEN A SCENARIO IS SUBMITTED FOR PUBLICATION
+================================================================
+
+This is already built. When a teacher clicks "Υποβολή για δημοσίευση",
+Strapi sends an email
+(strapi/src/api/scenario-design/controllers/scenario-design.ts, the
+`submit` function). If REVIEW_NOTIFY_EMAIL is empty, no email is sent.
+If sending fails, the submission still goes through and the error is
+written to the Strapi log.
+
+
+1. Set these variables in strapi/.env
+   (Strapi's file, NOT the Next.js .env in the project root)
+-----------------------------------------------------------------
+
+REVIEW_NOTIFY_EMAIL=reviewer@yourschool.gr   # who gets the email (comma-separate for several people)
+STRAPI_ADMIN_URL=https://cms.example.gr      # the email links to the scenario in the admin panel
+SMTP_HOST=smtp.gmail.com                     # your mail provider's SMTP server
+SMTP_PORT=587
+SMTP_USER=you@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=you@gmail.com                      # sender address; usually must match SMTP_USER
+
+
+2. Restart Strapi
+-----------------
+
+Strapi only reads .env at startup.
+
+
+Notes
+-----
+
+- Gmail: turn on 2-step verification, then create an App Password
+  (Google Account -> Security -> App passwords) and use it as SMTP_PASS.
+  Your normal password won't work.
+
+- Port 465: if your provider only offers 465 (SSL), add `secure: true`
+  next to `host` in strapi/config/plugins.ts. Port 587 works as is.
+
+- Subject and text: to change what the email says, edit the `subject`
+  and `text` lines in the `submit` function.
+
+- Testing: submit a scenario. If no email arrives, check the Strapi
+  console for "Review email failed".

@@ -6,22 +6,14 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:seed": "tsx scripts/seed.ts"
+    "lint": "eslint"
   },
   "dependencies": {
-    "@libsql/client": "^0.17.4",
     "@strapi/blocks-react-renderer": "^1.0.2",
-    "@strapi/client": "^1.6.2",
     "@tiptap/extensions": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
-    "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
-    "isomorphic-dompurify": "^3.19.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -35,7 +27,6 @@
     "eslint-config-next": "16.2.9",
     "husky": "^9.1.7",
     "tailwindcss": "^4",
-    "tsx": "^4.23.0",
     "typescript": "^5"
   }
 }

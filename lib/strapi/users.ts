@@ -5,6 +5,7 @@ export interface StrapiUser {
   id: number;
   documentId?: string;
   username: string;
+  fullName?: string | null;
   email: string;
   role?: { name: string; type: string };
 }

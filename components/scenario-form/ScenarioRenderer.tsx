@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FieldRenderer } from "./FieldRenderer";
-import type { ScenarioFieldValue, ScenarioSchema } from "@/lib/types";
+import type { ScenarioFieldValue, ScenarioSchema, ScenarioSchemaTab } from "@/lib/types";
 
 interface ScenarioRendererProps {
   schema: ScenarioSchema;
@@ -19,13 +19,25 @@ const COL_SPAN: Record<number, string> = {
   9: "col-span-9", 10: "col-span-10", 11: "col-span-11", 12: "col-span-12",
 };
 
+const OTHER_TAB = "Άλλα πεδία";
+
+// Visible fields that no tab lists still get rendered, so a stale tab layout can't hide (required) fields
+function withLeftoverTab(schema: ScenarioSchema): ScenarioSchemaTab[] {
+  const listed = new Set(schema.tabs.flatMap((t) => t.fields));
+  const leftover = schema.fields
+    .filter((f) => f.view?.visible !== false && !listed.has(f.name))
+    .map((f) => f.name);
+  return leftover.length ? [...schema.tabs, { label: OTHER_TAB, fields: leftover }] : schema.tabs;
+}
+
 export function ScenarioRenderer({ schema, values = {}, errors = {}, jumpKey = 0, onFieldChange }: ScenarioRendererProps) {
-  const [activeTab, setActiveTab] = useState(schema.tabs[0]?.label ?? "");
+  const tabs = useMemo(() => withLeftoverTab(schema), [schema]);
+  const [activeTab, setActiveTab] = useState(tabs[0]?.label ?? "");
 
   // Jump only when the form reports a new failed submit
   useEffect(() => {
     if (jumpKey === 0) return;
-    const first = schema.tabs.find((t) => t.fields.some((f) => errors[f]));
+    const first = tabs.find((t) => t.fields.some((f) => errors[f]));
     if (first) setActiveTab(first.label);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jumpKey]);
@@ -33,7 +45,7 @@ export function ScenarioRenderer({ schema, values = {}, errors = {}, jumpKey = 0
   return (
     <div className="space-y-6">
       <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-        {schema.tabs.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = tab.label === activeTab;
           const hasError = tab.fields.some((f) => errors[f]);
           return (
@@ -53,7 +65,7 @@ export function ScenarioRenderer({ schema, values = {}, errors = {}, jumpKey = 0
         })}
       </div>
 
-      {schema.tabs.map((tab) => (
+      {tabs.map((tab) => (
         <div
           key={tab.label}
           hidden={tab.label !== activeTab}
@@ -79,137 +91,3 @@ export function ScenarioRenderer({ schema, values = {}, errors = {}, jumpKey = 0
     </div>
   );
 }
-
-
-/*
-"use client";
-
-import { useState } from "react";
-
-import { ScenarioFieldValue } from "./types";
-import { FieldRenderer } from "./FieldRenderer";
-import { ScenarioSchema } from "@/lib/types";
-
-interface ScenarioRendererProps {
-  schema: ScenarioSchema;
-  values?: Record<string, ScenarioFieldValue>;
-  onFieldChange?: (
-    name: string,
-    value: ScenarioFieldValue
-  ) => void;
-}
-
-function getColSpan(size?: number) {
-  switch (size) {
-    case 1:
-      return "col-span-1";
-    case 2:
-      return "col-span-2";
-    case 3:
-      return "col-span-3";
-    case 4:
-      return "col-span-4";
-    case 5:
-      return "col-span-5";
-    case 6:
-      return "col-span-6";
-    case 7:
-      return "col-span-7";
-    case 8:
-      return "col-span-8";
-    case 9:
-      return "col-span-9";
-    case 10:
-      return "col-span-10";
-    case 11:
-      return "col-span-11";
-    case 12:
-      return "col-span-12";
-    default:
-      return "col-span-12";
-  }
-}
-
-export function ScenarioRenderer({
-  schema,
-  values = {},
-  onFieldChange,
-}: ScenarioRendererProps) {
-  const [activeTab, setActiveTab] = useState(
-    schema.tabs[0]?.label ?? ""
-  );
-
-
-  return (
-    <div className="space-y-6">
-      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-        {schema.tabs.map((tab) => {
-          const isActive = tab.label === activeTab;
-
-          return (
-            <button
-              key={tab.label}
-              type="button"
-              onClick={() => setActiveTab(tab.label)}
-              className={[
-                "border-b-2 px-4 py-3 text-sm font-medium",
-                isActive
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-900",
-              ].join(" ")}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {schema.tabs.map((tab) => {
-        if (tab.label !== activeTab) {
-          return null;
-        }
-
-        return (
-          <div
-            key={tab.label}
-            className="grid grid-cols-12 gap-6 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900"
-          >
-            {tab.fields.map((fieldName) => {
-              const field = schema.fields.find(
-                (item) => item.name === fieldName
-              );
-
-              if (!field) {
-                return null;
-              }
-
-              return (
-                <div
-                  key={field.name}
-                  className={getColSpan(field.view?.size)}
-                >
-                  <FieldRenderer
-                    field={field}
-                    value={values[field.name]}
-                    onChange={(value) => {
-                      console.log("Renderer change:", {
-                        field: field.name,
-                        value,
-                      });
-
-                      onFieldChange?.(
-                        field.name,
-                        value
-                      );
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-*/

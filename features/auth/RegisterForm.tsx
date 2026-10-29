@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { MAX_FULL_NAME } from "@/lib/utils";
 import { registerAction, type AuthState } from "./auth";
 
 const input = "w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200";
@@ -16,8 +17,13 @@ export function RegisterForm() {
       )}
 
       <label className="block text-sm">
-        <span className={label}>Όνομα</span>
-        <input name="name" type="text" required className={input} />
+        <span className={label}>Ονοματεπώνυμο</span>
+        <input name="fullName" type="text" required maxLength={MAX_FULL_NAME} autoComplete="name" className={input} />
+        <span className="mt-1 block text-xs text-slate-500">Εμφανίζεται ως συγγραφέας στα σενάριά σας.</span>
+      </label>
+      <label className="block text-sm">
+        <span className={label}>Όνομα χρήστη</span>
+        <input name="name" type="text" required autoComplete="username" className={input} />
       </label>
       <label className="block text-sm">
         <span className={label}>Email</span>

@@ -42,6 +42,7 @@ export interface User {
   documentId?: string;
   username: string;
   email: string;
+  fullName?: string | null;
 }
 
 export interface Session {
@@ -49,60 +50,3 @@ export interface Session {
   name: string;
   jwt: string;
 }
-
-
-/*
-import { ScenarioFieldValue, ScenarioFieldView } from "@/components/scenario-form/types";
-
-export interface Comment {
-  id: string;
-  scenarioId: string;
-  authorName: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface User {
-  id: number;
-  documentId: string;
-  username: string;
-  email: string;
-  confirmed: boolean;
-  blocked: boolean;
-}
-
-export interface Session {
-  name: string;
-  userId: string;
-  jwt: string;
-}
-
-export interface StrapiDocument {
-  documentId: string;
-  [key: string]: unknown;
-}
-
-export interface ScenarioSchemaField {
-  name: string;
-  type: string;
-  required?: boolean;
-  options?: string[];
-  multiple?: boolean;        // media: Strapi "Allow multiple files"
-  allowedTypes?: string[];   // media: ["images" | "files" | "videos" | "audios"]
-  value?: ScenarioFieldValue;
-  view?: ScenarioFieldView;
-  onChange?: (value: ScenarioFieldValue) => void;
-  placeholder?: string;
-}
-
-export interface ScenarioSchemaTab {
-  label: string;
-  order: number | null | undefined;
-  fields: string[];
-}
-
-export interface ScenarioSchema {
-  fields: ScenarioSchemaField[];
-  tabs: ScenarioSchemaTab[];
-}
-*/

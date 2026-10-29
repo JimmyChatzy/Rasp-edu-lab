@@ -1,6 +1,8 @@
 "use client";
 
 import { BlocksRenderer, type BlocksContent, } from "@strapi/blocks-react-renderer";
+import { toImageWidth } from "@/lib/blocks";
+import { mediaUrl } from "@/lib/media";
 
 interface BlocksContentRendererProps {
   content: BlocksContent | null | undefined;
@@ -41,6 +43,18 @@ export default function BlocksContentRenderer( {content}: BlocksContentRendererP
                         <blockquote className="border-l-4 pl-4 italic">
                             {children}
                         </blockquote>
+                    ),
+                    // `displayWidth` is our extra key on the block; the renderer passes it through
+                    image: ({ image, ...rest }) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                            src={mediaUrl(image.url)}
+                            alt={image.alternativeText ?? ""}
+                            width={image.width}
+                            height={image.height}
+                            style={{ width: `${toImageWidth((rest as { displayWidth?: unknown }).displayWidth)}%` }}
+                            className="mx-auto block h-auto max-w-full rounded"
+                        />
                     ),
                     link: ({ children, url }) => (
                         <a

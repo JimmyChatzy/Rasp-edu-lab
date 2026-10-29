@@ -59,6 +59,19 @@ const TOOLBAR_BUTTONS: ToolbarButton[] = [
     isActive: (editor) => editor.isActive("strike"),
   },
   {
+    label: "Λίστα με κουκκίδες",
+    icon: (
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 6h11M9 12h11M9 18h11" />
+        <circle cx="4.5" cy="6" r="1.5" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="12" r="1.5" fill="currentColor" stroke="none" />
+        <circle cx="4.5" cy="18" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    ),
+    action: (editor) => editor.chain().focus().toggleBulletList().run(),
+    isActive: (editor) => editor.isActive("bulletList"),
+  },
+  {
     label: "Αριθμημένη λίστα",
     icon: (
       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

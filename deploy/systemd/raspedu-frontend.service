@@ -1,0 +1,21 @@
+[Unit]
+Description=Raspberry Pi Edu - Next.js frontend
+After=network.target raspedu-strapi.service
+Wants=raspedu-strapi.service
+
+[Service]
+Type=simple
+User=raspedu
+Group=raspedu
+WorkingDirectory=/opt/raspedu
+Environment=NODE_ENV=production
+# Settings come from /opt/raspedu/.env.local (NEXT_PUBLIC_* are fixed at build time)
+ExecStart=/opt/raspedu/node_modules/.bin/next start -H 127.0.0.1 -p 3000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

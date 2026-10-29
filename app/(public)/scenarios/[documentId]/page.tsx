@@ -6,6 +6,7 @@ import BlocksContentRenderer from "@/components/scenario-form/BlocksContentRende
 import { SCENARIO_SCHEMA_ID } from "@/lib/config";
 import { mediaUrl, type StrapiFile } from "@/lib/media";
 import type { ScenarioSchemaField } from "@/lib/types";
+import { displayName } from "@/lib/utils";
 
 interface ScenarioPageProps {
   params: Promise<{ documentId: string }>;
@@ -58,14 +59,6 @@ function isSystemField(name: string): boolean {
     "publishedAt",
     "locale",
   ].includes(name);
-}
-
-function absolutizeImages(blocks: BlocksContent): BlocksContent {
-  return blocks.map((block) =>
-    block.type === "image"
-      ? { ...block, image: { ...block.image, url: mediaUrl(block.image.url) } }
-      : block
-  ) as BlocksContent;
 }
 
 export default async function ScenarioPage({
@@ -123,6 +116,11 @@ export default async function ScenarioPage({
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
           {title}
         </h1>
+        {scenario.author && (
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+            Συγγραφέας: <span className="font-medium">{displayName(scenario.author)}</span>
+          </p>
+        )}
 
         <div className="mt-4 flex flex-wrap gap-3">
           {metadataFields.map((field) => {
@@ -148,21 +146,34 @@ export default async function ScenarioPage({
       </header>
 
       <div className="space-y-8">
+        {/* Native <details>: each rich text section collapses by clicking its heading, no client JS */}
         {blocksFields.map((field) => (
-          <section
+          <details
             key={field.name}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-8"
+            open
+            className="group rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
           >
-            <h2 className="mb-5 text-xl font-semibold text-slate-900 dark:text-slate-100">
-              {getFieldLabel(field)}
-            </h2>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-8 [&::-webkit-details-marker]:hidden">
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+                {getFieldLabel(field)}
+              </h2>
+              <svg
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 text-slate-500 transition-transform group-open:rotate-180 dark:text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
 
-            <div className="text-slate-700 dark:text-slate-300">
+            <div className="px-5 pb-5 text-slate-700 dark:text-slate-300 sm:px-8 sm:pb-8">
               <BlocksContentRenderer
-                content={absolutizeImages(scenario[field.name] as BlocksContent)}
+                content={scenario[field.name] as BlocksContent}
               />
             </div>
-          </section>
+          </details>
         ))}
       </div>
       {mediaFields.map((field) => {

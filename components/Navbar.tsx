@@ -15,7 +15,7 @@
             {session ? (
               <>
                 <Link href="/dashboard" className={link}>Τα σενάρια μου</Link>
-                <span className="text-sm text-slate-500">{session.name}</span>
+                <Link href="/profile" className={link} title="Το προφίλ μου">{session.name}</Link>
                 <form action={logoutAction}>
                   <button type="submit" className={link}>Αποσύνδεση</button>
                 </form>

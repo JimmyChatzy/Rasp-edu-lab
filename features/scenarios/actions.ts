@@ -47,26 +47,3 @@ export async function deleteScenarioAction(documentId: string) {
 export async function submitScenarioAction(documentId: string) {
   return run(() => strapiFetch(`/api/scenario-designs/${encodeURIComponent(documentId)}/submit`, { method: "POST" }));
 }
-
-
-/*
-
-"use server";
-
-import { ScenarioValues } from "@/components/scenario-form/types";
-import { UnauthorizedError, ApiError } from "@/lib/strapi/errors"
-import { strapiFetch } from "@/lib/strapi/client"
-
-export type ActionResult = { ok: true } | { ok: false; code: "unauthorized" | "validation" | "server"; message?: string };
-
-export async function createScenarioAction(values: ScenarioValues): Promise<ActionResult> {
-  try {
-    await strapiFetch("/api/scenarios", { method: "POST", body: JSON.stringify({ data: values }), headers: { "Content-Type": "application/json" } });
-    return { ok: true };
-  } catch (error) {
-    if (error instanceof UnauthorizedError) return { ok: false, code: "unauthorized" };
-    if (error instanceof ApiError && error.status === 400) return { ok: false, code: "validation", message: error.message };
-    console.error(error);
-    return { ok: false, code: "server" };
-  }
-}*/
