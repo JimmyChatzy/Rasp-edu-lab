@@ -10,7 +10,7 @@ Group=raspedu
 WorkingDirectory=/opt/raspedu/strapi
 Environment=NODE_ENV=production
 # Settings come from /opt/raspedu/strapi/.env
-ExecStart=/usr/bin/npm run start
+ExecStart=/opt/raspedu/strapi/node_modules/.bin/strapi start
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

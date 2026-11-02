@@ -7,10 +7,10 @@ Wants=raspedu-strapi.service
 Type=simple
 User=raspedu
 Group=raspedu
-WorkingDirectory=/opt/raspedu
+WorkingDirectory=/opt/raspedu/frontend
 Environment=NODE_ENV=production
-# Settings come from /opt/raspedu/.env.local (NEXT_PUBLIC_* are fixed at build time)
-ExecStart=/opt/raspedu/node_modules/.bin/next start -H 127.0.0.1 -p 3000
+# Settings come from /opt/raspedu/frontend/.env.local (NEXT_PUBLIC_* are fixed at build time)
+ExecStart=/opt/raspedu/frontend/node_modules/.bin/next start -H 127.0.0.1 -p 3000
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true

@@ -1,113 +1,63 @@
-# Deploying to Debian 12 with Apache and MariaDB
+# Installing Raspberry Pi Edu on a server with Apache and MariaDB
 
-This guide installs the whole platform on one Debian 12 (bookworm) server:
+This guide sets up the whole platform on a Linux server that **already runs Apache and MariaDB**. It is written for Debian/Ubuntu (`apt`, `a2ensite`, `systemctl`). You need `sudo`.
+
+You don't need to know anything about the project beforehand. Run the steps in order.
+
+---
+
+## How it fits together
 
 ```
-Browser ──https──> Apache :443 ─┬─ example.gr      ──> Next.js  127.0.0.1:3000
-                                └─ cms.example.gr  ──> Strapi   127.0.0.1:1337 ──> MariaDB 127.0.0.1:3306
+Browser ──https──> Apache :443 ─┬─ example.gr      ──> Next.js (the site)        127.0.0.1:3000
+                                └─ cms.example.gr  ──> Strapi (admin + API)      127.0.0.1:1337 ──> MariaDB
 ```
 
-- **Apache** is the only public entry point. It handles HTTPS (Let's Encrypt) and forwards requests.
-- **Next.js** (the site) and **Strapi** (admin panel, API, uploaded files) run as systemd services and listen on localhost only.
-- **MariaDB** stores the Strapi data. Uploaded files live in `strapi/public/uploads`.
-- The browser loads pictures directly from `https://cms.example.gr/uploads/...`. All other calls go from Next.js to Strapi on the server.
+The project has **two parts, in two separate Git repositories**:
 
-Replace `example.gr` and `cms.example.gr` with your real domain everywhere below. The commands run as a user with `sudo` unless they say otherwise.
+| Part | Repository | What it is | Installed in |
+|---|---|---|---|
+| Frontend | `https://github.com/JimmyChatzy/Rasp-edu-lab` | The public website (Next.js). Contains this guide and the config files in `deploy/`. | `/opt/raspedu/frontend` |
+| CMS | `https://github.com/JimmyChatzy/Strapi-for-raspbEduLab` | Strapi: admin panel, API, user accounts, uploaded pictures | `/opt/raspedu/strapi` |
 
-Ready-made config files are in [`deploy/`](deploy/):
+- **Apache** is the only public entry point. It handles HTTPS and forwards requests to the two Node.js apps.
+- The two apps run as **systemd services** under their own user (`raspedu`) and listen on `127.0.0.1` only.
+- **MariaDB** stores Strapi's data in its own database (`raspedu`). Your existing databases are not touched.
+- Uploaded pictures are stored in `/opt/raspedu/strapi/public/uploads`. Browsers load them from `https://cms.example.gr/uploads/...`.
 
-| File | Goes to |
+Your existing Apache sites keep working. This guide only **adds** two virtual hosts.
+
+### What you need from the project owner
+
+1. Access to the two repositories above. If they are private, you also need a GitHub account with access to them and a [personal access token](https://github.com/settings/tokens) to use as the password when cloning.
+2. The **data export file** `raspedu-export.tar.gz`. It contains the scenarios, user accounts, the form layout and the uploaded pictures. It is sent separately because it contains password hashes. **Delete it once the import worked.**
+3. The **two domain names**. This guide uses `example.gr` for the site and `cms.example.gr` for Strapi. **Replace them with the real names everywhere.** Both need DNS A/AAAA records pointing to this server.
+4. Optionally, SMTP details for the email that goes to reviewers when a teacher submits a scenario.
+
+---
+
+## 1. Check the server
+
+### 1.1 Versions and free ports
+
+```bash
+cat /etc/os-release | head -2
+mariadb --version            # or: mysql --version
+apache2 -v
+free -h                      # RAM
+df -h /opt                   # disk
+sudo ss -ltnp | grep -E ':3000|:1337'   # must print nothing
+```
+
+| Requirement | Why |
 |---|---|
-| `deploy/apache/raspedu-frontend.conf` | `/etc/apache2/sites-available/` |
-| `deploy/apache/raspedu-cms.conf` | `/etc/apache2/sites-available/` |
-| `deploy/systemd/raspedu-strapi.service` | `/etc/systemd/system/` |
-| `deploy/systemd/raspedu-frontend.service` | `/etc/systemd/system/` |
-| `deploy/backup.sh` | `/usr/local/bin/raspedu-backup` |
+| MariaDB **10.3 or newer**, 10.6+ recommended (10.11 / 11.x are fine) | Strapi 5 |
+| **4 GB RAM**, or 2 GB plus swap (1.2) | Building the Strapi admin panel |
+| About **5 GB** free disk | Code, `node_modules`, builds |
+| Ports **3000 and 1337 free** | The two apps. If something already uses them, change `PORT` in step 4.1 and the port numbers in step 5.3, step 6 and both Apache files. |
+| Ports 80 and 443 open from the internet | Apache, Let's Encrypt |
 
----
-
-## 0. Requirements
-
-- Debian 12, x86-64 or arm64. A Raspberry Pi 4/5 with Raspberry Pi OS (bookworm) works too, but the builds are slow.
-- **At least 4 GB RAM** for building the Strapi admin panel, or 2 GB plus swap (step 2.4).
-- About 5 GB of free disk space.
-- Two DNS **A records** pointing to the server: `example.gr` (and `www.example.gr` if you want it) and `cms.example.gr`.
-- Ports 80 and 443 open towards the server.
-
----
-
-## 1. On your development machine
-
-### 1.1 Export the Strapi data
-
-The export carries scenarios, tab layouts, website users with their roles and permissions, media files and the Content Manager settings (field labels, sizes, layouts the scenario form reads). It does **not** carry admin panel accounts, so you create a new admin on the server (step 6.5).
-
-```bash
-cd raspberry-pi-edu/strapi
-npx strapi export --no-encrypt -f raspedu-export
-# creates raspedu-export.tar.gz
-```
-
-> The export contains password hashes of the website users. Delete the file from both machines when the migration is done.
-
-### 1.2 Get the code onto the server
-
-**Important:** in the GitHub repository, `strapi/` is a *gitlink*: a pointer to a separate local git repository with no remote. A `git clone` of the GitHub repository gives an **empty `strapi` folder**. Use one of these:
-
-**Option A: copy the folder with rsync (simplest)**
-
-```bash
-cd raspberry-pi-edu/..
-rsync -az --info=progress2 \
-  --exclude node_modules --exclude .next \
-  --exclude strapi/node_modules --exclude strapi/dist --exclude strapi/.tmp \
-  --exclude strapi/.cache --exclude strapi/.strapi --exclude strapi/build \
-  --exclude strapi/public/uploads \
-  --exclude .env --exclude .env.local --exclude strapi/.env \
-  --exclude local.db \
-  raspberry-pi-edu/ youruser@SERVER:/tmp/raspedu/
-scp raspberry-pi-edu/strapi/raspedu-export.tar.gz youruser@SERVER:/tmp/
-```
-
-The uploads are excluded because they travel inside the export.
-
-**Option B: fix the repository (better long term)**
-
-Push `strapi/` to its own GitHub repository and register it as a real submodule (`git submodule add <url> strapi`), or remove the gitlink and commit the Strapi files into the main repository. Then the server can `git clone --recurse-submodules` and updates become a `git pull`.
-
----
-
-## 2. Prepare the server
-
-### 2.1 Base packages
-
-```bash
-sudo apt update && sudo apt full-upgrade -y
-sudo apt install -y curl ca-certificates gnupg git build-essential python3 ufw rsync
-```
-
-`build-essential` and `python3` are only needed if a native npm module (e.g. `better-sqlite3`, `sharp`) has no prebuilt binary for your CPU.
-
-### 2.2 Node.js 22 LTS
-
-Debian 12 ships Node 18, which is too old (Next.js 16 needs ≥ 20.9). Install Node 22 from NodeSource:
-
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs
-node -v   # v22.x
-npm -v
-```
-
-### 2.3 A dedicated system user
-
-The apps run as `raspedu`, never as root:
-
-```bash
-sudo adduser --system --group --home /opt/raspedu --shell /usr/sbin/nologin raspedu
-```
-
-### 2.4 Swap (only if the server has less than 4 GB RAM)
+### 1.2 Swap (only if the server has less than 4 GB RAM)
 
 ```bash
 sudo fallocate -l 2G /swapfile
@@ -116,41 +66,79 @@ sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ```
 
-### 2.5 Firewall
+### 1.3 Base packages
 
 ```bash
-sudo ufw allow OpenSSH
-sudo ufw allow 'WWW Full'      # 80 + 443
-sudo ufw enable
-sudo ufw status
+sudo apt update
+sudo apt install -y curl ca-certificates gnupg git build-essential python3
 ```
 
-Ports 3000, 1337 and 3306 stay closed: the services listen on 127.0.0.1 only.
+`build-essential` and `python3` are only used when a native npm module (`sharp`, `better-sqlite3`) has no prebuilt binary for your CPU.
+
+### 1.4 Node.js 22 LTS
+
+The distribution's Node.js is usually too old (Next.js needs ≥ 20.9). Install Node 22 from NodeSource **system-wide** (not with `nvm`: the services run as another user and need `node` in `/usr/bin`):
+
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+node -v      # v22.x
+which node   # /usr/bin/node
+```
+
+If Node.js is already installed, check that `node -v` is between 20.9 and 24 and that `which node` prints `/usr/bin/node`.
 
 ---
 
-## 3. MariaDB
+## 2. Get the code
 
-### 3.1 Install and secure
+### 2.1 Service user
 
-Debian 12 ships MariaDB 10.11, which Strapi 5 supports.
-
-```bash
-sudo apt install -y mariadb-server
-sudo mariadb-secure-installation
-```
-
-Answers: current root password: *Enter*; switch to unix_socket authentication: **n** (it is already used on Debian); change root password: **n**; remove anonymous users: **Y**; disallow root login remotely: **Y**; remove test database: **Y**; reload privileges: **Y**.
-
-Debian's MariaDB listens on 127.0.0.1 only by default (`bind-address` in `/etc/mysql/mariadb.conf.d/50-server.cnf`). Leave it that way.
-
-### 3.2 Database and user
-
-Choose a strong password (e.g. `openssl rand -base64 24`) and keep it for step 6.1.
+Both apps run as `raspedu`, never as root:
 
 ```bash
-sudo mariadb
+sudo adduser --system --group --home /opt/raspedu --shell /usr/sbin/nologin raspedu
 ```
+
+### 2.2 Clone the two repositories
+
+```bash
+sudo -u raspedu git clone https://github.com/JimmyChatzy/Rasp-edu-lab.git           /opt/raspedu/frontend
+sudo -u raspedu git clone https://github.com/JimmyChatzy/Strapi-for-raspbEduLab.git /opt/raspedu/strapi
+sudo -u raspedu mkdir -p /opt/raspedu/strapi/public/uploads
+ls /opt/raspedu    # frontend  strapi
+```
+
+If Git asks for a password, use your GitHub personal access token.
+
+### 2.3 Copy the data export onto the server
+
+From the machine where you have the file:
+
+```bash
+scp raspedu-export.tar.gz youruser@SERVER:/tmp/
+```
+
+Then on the server:
+
+```bash
+sudo chown raspedu:raspedu /tmp/raspedu-export.tar.gz
+sudo chmod 600 /tmp/raspedu-export.tar.gz
+```
+
+---
+
+## 3. MariaDB: database and user
+
+MariaDB is already running, so you only add a database and a user for this app.
+
+Generate a strong password and keep it for step 4.1:
+
+```bash
+openssl rand -base64 24
+```
+
+Log in as the MariaDB admin. On Debian/Ubuntu this is usually `sudo mariadb`. If your root account uses a password, use `mariadb -u root -p` instead.
 
 ```sql
 CREATE DATABASE raspedu CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -163,81 +151,36 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-`utf8mb4` is required for Greek text and emoji. The two user entries cover connections through `localhost` and `127.0.0.1`.
+- If a database or user named `raspedu` already exists, choose another name and use it in step 4.1 and in `deploy/backup.sh`.
+- `utf8mb4` is required. Without it, Greek text turns into `???`.
 
-Test the login:
+Test the new login:
 
 ```bash
 mariadb -u raspedu -p -h 127.0.0.1 raspedu -e "SELECT @@character_set_database, VERSION();"
+# utf8mb4 | 10.x / 11.x
 ```
 
 ---
 
-## 4. Apache
+## 4. Strapi (CMS)
 
-### 4.1 Install and enable the proxy modules
-
-```bash
-sudo apt install -y apache2
-sudo a2enmod proxy proxy_http headers ssl rewrite
-```
-
-### 4.2 Add the two sites
-
-Copy the files from `deploy/apache/` (after step 5 they are in `/opt/raspedu/deploy/apache/`), then **edit `ServerName`/`ServerAlias`** to your domains:
-
-```bash
-sudo cp /opt/raspedu/deploy/apache/raspedu-frontend.conf /etc/apache2/sites-available/
-sudo cp /opt/raspedu/deploy/apache/raspedu-cms.conf      /etc/apache2/sites-available/
-sudo nano /etc/apache2/sites-available/raspedu-frontend.conf
-sudo nano /etc/apache2/sites-available/raspedu-cms.conf
-
-sudo a2dissite 000-default
-sudo a2ensite raspedu-frontend raspedu-cms
-sudo apache2ctl configtest     # must print "Syntax OK"
-sudo systemctl reload apache2
-```
-
-Two settings matter for this app:
-
-- `ProxyPreserveHost On`: Next.js Server Actions (saving a scenario, login, profile) compare the browser's `Origin` with the `Host` header. Without it every form fails.
-- `X-Forwarded-Proto`: tells Strapi the request came over HTTPS, so its admin login cookies work.
-
-You add HTTPS in step 8, once the apps are running.
-
----
-
-## 5. Put the code in place
-
-```bash
-sudo rsync -a /tmp/raspedu/ /opt/raspedu/
-sudo mkdir -p /opt/raspedu/strapi/public/uploads
-sudo chown -R raspedu:raspedu /opt/raspedu
-```
-
-(With option B in step 1.2, run `sudo -u raspedu git clone --recurse-submodules <repo-url> /opt/raspedu` instead.)
-
-From here on, build commands run **as the `raspedu` user**:
+Run the commands in this section **as the `raspedu` user**:
 
 ```bash
 sudo -u raspedu -s
-cd /opt/raspedu
+cd /opt/raspedu/strapi
 ```
 
----
-
-## 6. Strapi
-
-### 6.1 Configuration file
+### 4.1 Configuration file
 
 ```bash
-cd /opt/raspedu/strapi
 cp .env.example .env
 chmod 600 .env
 nano .env
 ```
 
-Generate each secret with `openssl rand -base64 32`. `APP_KEYS` takes four of them, separated by commas. **Use new secrets on the server**, not the ones from your development machine.
+Replace the whole content with the block below. Generate **each** secret with `openssl rand -base64 32`. `APP_KEYS` takes four of them, separated by commas.
 
 ```dotenv
 HOST=127.0.0.1
@@ -245,12 +188,12 @@ PORT=1337
 PUBLIC_URL=https://cms.example.gr
 IS_PROXIED=true
 
-APP_KEYS="key1,key2,key3,key4"
-API_TOKEN_SALT=...
-ADMIN_JWT_SECRET=...
-TRANSFER_TOKEN_SALT=...
-JWT_SECRET=...
-ENCRYPTION_KEY=...
+APP_KEYS="secret1,secret2,secret3,secret4"
+API_TOKEN_SALT=secret
+ADMIN_JWT_SECRET=secret
+TRANSFER_TOKEN_SALT=secret
+JWT_SECRET=secret
+ENCRYPTION_KEY=secret
 
 DATABASE_CLIENT=mysql
 DATABASE_HOST=127.0.0.1
@@ -259,54 +202,61 @@ DATABASE_NAME=raspedu
 DATABASE_USERNAME=raspedu
 DATABASE_PASSWORD=STRONG-PASSWORD
 
-# Optional: email the reviewer when a teacher submits a scenario
-REVIEW_NOTIFY_EMAIL=reviewer@example.gr
+# Optional: email reviewers when a teacher submits a scenario. Leave REVIEW_NOTIFY_EMAIL empty to turn it off.
+REVIEW_NOTIFY_EMAIL=
 STRAPI_ADMIN_URL=https://cms.example.gr
-SMTP_HOST=smtp.example.gr
+SMTP_HOST=
 SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASS=...
-SMTP_FROM=no-reply@example.gr
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
 ```
 
-> Changing `JWT_SECRET` later logs every website user out. That is harmless: they log in again.
+Notes:
 
-### 6.2 Install and build
+- `DATABASE_CLIENT=mysql` is correct for MariaDB.
+- For email: `REVIEW_NOTIFY_EMAIL` takes one or more addresses, comma-separated. `SMTP_FROM` usually has to equal `SMTP_USER`. With Gmail, use an App Password (Google Account → Security → App passwords) as `SMTP_PASS`. If your provider only offers port 465, add `secure: true` next to `host` in `config/plugins.ts`.
+
+### 4.2 Install and build
 
 ```bash
 npm ci
 NODE_ENV=production npm run build
 ```
 
-The build compiles the TypeScript and the admin panel and takes a few minutes.
+The build takes a few minutes, longer on a Raspberry Pi. If it is killed or reports "heap out of memory", add swap (1.2).
 
-### 6.3 Import the data
+### 4.3 Import the data
 
 ```bash
 NODE_ENV=production npx strapi import -f /tmp/raspedu-export.tar.gz --force
 ```
 
-On the first run Strapi creates all tables in MariaDB, then fills them. `--force` skips the "this deletes existing data" question; the database is empty anyway.
+Strapi creates all tables in the `raspedu` database and fills them. `--force` skips the "this deletes existing data" question. The database is empty, so nothing is lost.
 
-### 6.4 Start Strapi as a service
+When it finishes, delete the export: `rm /tmp/raspedu-export.tar.gz`.
 
-Leave the `raspedu` shell (`exit`), then:
+Leave the `raspedu` shell:
 
 ```bash
-sudo cp /opt/raspedu/deploy/systemd/raspedu-strapi.service /etc/systemd/system/
+exit
+```
+
+### 4.4 Start Strapi as a service
+
+```bash
+sudo cp /opt/raspedu/frontend/deploy/systemd/raspedu-strapi.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now raspedu-strapi
 sudo systemctl status raspedu-strapi
 curl -s http://127.0.0.1:1337/_health -o /dev/null -w '%{http_code}\n'   # 204
 ```
 
-Logs: `journalctl -u raspedu-strapi -f`.
+The first start can take about 30 seconds. Logs: `journalctl -u raspedu-strapi -f`.
 
-At startup Strapi grants the API permissions the app needs (see `strapi/src/index.ts`).
+### 4.5 Create the admin account (do this right away)
 
-### 6.5 Create the admin account (do this immediately)
-
-Until an admin exists, **anyone** who opens `/admin` can register as the first admin. Create it from the command line before going public:
+The export does **not** contain admin panel accounts. Until an admin exists, **anyone** who opens `/admin` can register as the first one. Create it now:
 
 ```bash
 cd /opt/raspedu/strapi
@@ -314,28 +264,31 @@ sudo -u raspedu NODE_ENV=production npx strapi admin:create-user \
   --firstname Όνομα --lastname Επώνυμο --email admin@example.gr
 ```
 
-It asks for the password. (Passing `--password` also works, but leaves it in your shell history.)
+It asks for the password.
 
-### 6.6 Check the imported data
+### 4.6 Check the imported data
 
 ```bash
-# published scenarios (the public list)
+# published scenarios (the public list): JSON with a "data" array
 curl -s 'http://127.0.0.1:1337/api/scenario-designs' | head -c 300; echo
-# the form schema and its tabs
-curl -s "http://127.0.0.1:1337/api/scenario-design/schema/gol1wvlw5o4paor1719wo41w" | head -c 300; echo
+# the scenario form: must contain "fields" and a non-empty "tabs" list
+curl -s 'http://127.0.0.1:1337/api/scenario-design/schema/gol1wvlw5o4paor1719wo41w' | head -c 300; echo
 ```
 
-The second call must return `fields` **and** a non-empty `tabs` list. If it says not found, the schema entry has a different `documentId`: open the admin → Content Manager → ScenarioDesign → the "Raspberry PI για μικράκια" entry, copy the id from the address bar, and use it as `SCENARIO_SCHEMA_ID` in step 7.1.
+If the second call returns "not found", the form entry has a different id. Open the admin later (step 7), go to Content Manager → ScenarioDesign → the entry "Raspberry PI για μικράκια", copy the id from the address bar, and use it as `SCENARIO_SCHEMA_ID` in step 5.1.
 
 ---
 
-## 7. Next.js frontend
-
-### 7.1 Configuration file
+## 5. Frontend (Next.js)
 
 ```bash
 sudo -u raspedu -s
-cd /opt/raspedu
+cd /opt/raspedu/frontend
+```
+
+### 5.1 Configuration file
+
+```bash
 cp .env.example .env.local
 chmod 600 .env.local
 nano .env.local
@@ -347,9 +300,13 @@ NEXT_PUBLIC_STRAPI_URL=https://cms.example.gr
 SCENARIO_SCHEMA_ID=gol1wvlw5o4paor1719wo41w
 ```
 
-`NEXT_PUBLIC_STRAPI_URL` is written into the JavaScript **at build time**. If you change it, build again (7.2).
+| Variable | Meaning |
+|---|---|
+| `STRAPI_URL` | How the site talks to Strapi on the server itself. Keep `127.0.0.1`. |
+| `NEXT_PUBLIC_STRAPI_URL` | The public Strapi address that browsers use for pictures. It is written into the JavaScript **at build time**: after changing it, build again (5.2) and restart. |
+| `SCENARIO_SCHEMA_ID` | The id of the entry that holds the scenario form (see 4.6). |
 
-### 7.2 Install and build
+### 5.2 Install and build
 
 ```bash
 npm ci
@@ -357,10 +314,10 @@ npm run build
 exit
 ```
 
-### 7.3 Start the site as a service
+### 5.3 Start the site as a service
 
 ```bash
-sudo cp /opt/raspedu/deploy/systemd/raspedu-frontend.service /etc/systemd/system/
+sudo cp /opt/raspedu/frontend/deploy/systemd/raspedu-frontend.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now raspedu-frontend
 sudo systemctl status raspedu-frontend
@@ -371,54 +328,93 @@ Logs: `journalctl -u raspedu-frontend -f`.
 
 ---
 
-## 8. HTTPS with Let's Encrypt
+## 6. Apache
 
-DNS must already point to the server.
+### 6.1 Enable the proxy modules
+
+Enabling a module that is already on does no harm:
 
 ```bash
-sudo apt install -y certbot python3-certbot-apache
-sudo certbot --apache -d example.gr -d www.example.gr -d cms.example.gr
+sudo a2enmod proxy proxy_http headers ssl rewrite
 ```
 
-Choose **redirect** when asked. Certbot creates the `:443` versions of both sites (copying the proxy settings) and renews the certificates automatically. Test the renewal:
+### 6.2 Add the two sites
 
 ```bash
+sudo cp /opt/raspedu/frontend/deploy/apache/raspedu-frontend.conf /etc/apache2/sites-available/
+sudo cp /opt/raspedu/frontend/deploy/apache/raspedu-cms.conf      /etc/apache2/sites-available/
+sudo nano /etc/apache2/sites-available/raspedu-frontend.conf   # ServerName / ServerAlias -> your site domain
+sudo nano /etc/apache2/sites-available/raspedu-cms.conf        # ServerName -> your CMS domain
+
+sudo a2ensite raspedu-frontend raspedu-cms
+sudo apache2ctl configtest     # must print "Syntax OK"
+sudo systemctl reload apache2
+```
+
+- **Leave your existing sites enabled.** Apache chooses the site by domain name (`ServerName`), so the new sites do not affect the old ones. Make sure no existing site already uses the same `ServerName`.
+- Do not remove `ProxyPreserveHost On`. The site's forms (login, saving a scenario, profile) compare the browser's `Origin` with the `Host` header and fail without it.
+- `X-Forwarded-Proto` tells Strapi that the request came over HTTPS. Its admin login needs this.
+- **Without subdomains:** both apps need their own (sub)domain. Running Strapi under a path such as `example.gr/cms` is not supported by this setup.
+
+### 6.3 HTTPS with Let's Encrypt
+
+HTTPS is **required**. In production the login cookie is marked `Secure`, so logging in on the site does not work over plain http.
+
+DNS for both domains must already point to the server:
+
+```bash
+sudo apt install -y certbot python3-certbot-apache   # skip if certbot is already installed
+sudo certbot --apache -d example.gr -d www.example.gr -d cms.example.gr
 sudo certbot renew --dry-run
 ```
 
-HTTPS is **required**: in production the login cookie is marked `Secure`, so logging in does not work over plain http.
+Choose **redirect** when asked. Certbot creates the `:443` copies of both sites, including the proxy settings, and renews the certificates automatically.
+
+If you already have your own certificates, create `<VirtualHost *:443>` blocks yourself instead. Copy everything inside the `:80` blocks and add your `SSLEngine on` / `SSLCertificateFile` / `SSLCertificateKeyFile` lines.
 
 ---
 
-## 9. Final checks
+## 7. Final checks
 
 | Check | Expected |
 |---|---|
 | `https://example.gr` | Homepage with the published scenarios and their pictures |
 | Click a scenario | Detail page with "Συγγραφέας", text and pictures |
-| `https://cms.example.gr/admin` | Strapi login; log in with the admin from 6.5 |
-| Log in on the site with an existing account | Dashboard "Τα σενάρια μου" lists that user's scenarios |
-| New scenario → upload a picture in a rich-text field → save | Saved, picture visible, size buttons work |
-| Dashboard → submit → approve in the admin (reviewStatus = published) | Scenario appears on the homepage |
+| `https://cms.example.gr/admin` | Strapi login. Log in with the admin from 4.5. |
+| Log in on the site with an existing account (ask the project owner for a test account) | Dashboard "Τα σενάρια μου" lists that user's scenarios |
+| Register a new account on the site, then create a scenario and upload a picture in a text field | Saved, picture visible |
+| Dashboard → submit → in the admin set `reviewStatus` to published | Scenario appears on the homepage |
 | Profile page → set full name | Name shows in the navbar and as author |
+| `sudo reboot`, wait, open the site | Everything starts by itself |
 
 ---
 
-## 10. Backups
+## 8. Backups
 
-The database and the uploads folder must be backed up together.
+The database and the uploads folder belong together. Back up both.
 
 ```bash
-sudo cp /opt/raspedu/deploy/backup.sh /usr/local/bin/raspedu-backup
+sudo cp /opt/raspedu/frontend/deploy/backup.sh /usr/local/bin/raspedu-backup
 sudo chmod 750 /usr/local/bin/raspedu-backup
 sudo /usr/local/bin/raspedu-backup          # test run
 ls -lh /var/backups/raspedu
-sudo crontab -e
-# add:
+```
+
+The script runs as root and logs in to MariaDB through the unix socket, which is the Debian default. **If your MariaDB root uses a password**, create `/root/.my.cnf` (mode 600) so the script can log in:
+
+```ini
+[client]
+user=root
+password=ROOT-PASSWORD
+```
+
+Schedule it nightly with `sudo crontab -e`:
+
+```
 30 3 * * * /usr/local/bin/raspedu-backup
 ```
 
-It keeps 14 days of backups in `/var/backups/raspedu`. Copy them off the server too (another machine, cloud storage): a backup on the same disk does not survive a disk failure.
+It keeps 14 days of backups in `/var/backups/raspedu`. Copy them off the server too: a backup on the same disk does not survive a disk failure. If your server already has a backup system, just include the database `raspedu` and the folder `/opt/raspedu/strapi/public/uploads`.
 
 **Restore:**
 
@@ -433,40 +429,49 @@ sudo systemctl start raspedu-strapi raspedu-frontend
 
 ---
 
-## 11. Updating the site later
+## 9. Updating to a new version
+
+Run a backup first. Then:
 
 ```bash
-# 1. bring the new code (rsync as in 1.2, or git pull with option B)
-sudo chown -R raspedu:raspedu /opt/raspedu
-
-# 2. rebuild
 sudo -u raspedu -s
-cd /opt/raspedu/strapi && npm ci && NODE_ENV=production npm run build
-cd /opt/raspedu && npm ci && npm run build
-exit
 
-# 3. restart
+cd /opt/raspedu/strapi
+git pull
+npm ci
+NODE_ENV=production npm run build
+
+cd /opt/raspedu/frontend
+git pull
+npm ci
+npm run build
+
+exit
 sudo systemctl restart raspedu-strapi raspedu-frontend
 ```
 
-Run a backup first. Strapi updates the database tables itself on startup when the content types changed.
+If `deploy/` changed, copy the changed files again (step 4.4, 5.3 or 6.2).
 
-**Schema changes happen in development only.** In production the Strapi Content-Type Builder is disabled. Add or change fields on your machine (`npm run develop`), then deploy the code. Content, the tab layout and the Content Manager labels are edited directly in the production admin.
+When the content types change, Strapi updates the database tables by itself on startup. In production the Content-Type Builder is disabled: **fields are changed by the developers**, not on the server. Content, the form's tab layout and the field labels can be edited in the production admin.
 
 ---
 
-## 12. Troubleshooting
+## 10. Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|
-| `502 Bad Gateway` | The service behind Apache is down: `systemctl status raspedu-strapi raspedu-frontend`, then `journalctl -u ...`. |
-| Strapi does not start: `ER_ACCESS_DENIED` | Wrong `DATABASE_*` values in `strapi/.env`, or the MariaDB user from 3.2 is missing. |
-| Strapi does not start: `ECONNREFUSED 127.0.0.1:3306` | MariaDB is down: `systemctl status mariadb`. |
-| Build killed / "JavaScript heap out of memory" | Not enough RAM: add swap (2.4). |
-| Pictures broken on the site | `NEXT_PUBLIC_STRAPI_URL` is wrong or was changed without rebuilding the frontend. |
-| Forms fail, logs show an Origin/Host mismatch | `ProxyPreserveHost On` missing in the Apache site. |
-| Login on the site does nothing | The site is served over http: finish step 8. |
+| `502 Bad Gateway` / `503 Service Unavailable` | The app behind Apache is down: `systemctl status raspedu-strapi raspedu-frontend`, then `journalctl -u raspedu-strapi -n 100`. |
+| Strapi: `ER_ACCESS_DENIED` | Wrong `DATABASE_*` values in `/opt/raspedu/strapi/.env`, or the user from step 3 is missing. |
+| Strapi: `ECONNREFUSED 127.0.0.1:3306` | MariaDB is down, or listens only on a socket/other port: `systemctl status mariadb`, check `port` / `skip-networking` in `/etc/mysql/`. |
+| Strapi: `EADDRINUSE` | Port 1337 (or 3000 for the frontend) is taken. See 1.1. |
+| Service fails with `status=203/EXEC` | `node` is not in `/usr/bin` (e.g. installed with nvm). Install it as in 1.4. |
+| Build killed / "JavaScript heap out of memory" | Not enough RAM: add swap (1.2). |
+| Pictures broken on the site | `NEXT_PUBLIC_STRAPI_URL` is wrong, or was changed without rebuilding the frontend (5.2). |
+| Forms fail, the log shows an Origin/Host mismatch | `ProxyPreserveHost On` is missing in the Apache site. |
+| Login on the site does nothing | The site is served over http: finish 6.3. |
 | Admin login loops back to the login page | `IS_PROXIED=true` or `PUBLIC_URL` missing in `strapi/.env`, or `X-Forwarded-Proto` missing in Apache. |
-| "Failed to find Server Action" right after an update | The browser has the old page open: reload it. |
-| The scenario form shows only the Save button | The schema has no tabs: check 6.6 and `SCENARIO_SCHEMA_ID`. |
-| Greek text turns into `???` | The database was not created with `utf8mb4` (3.2). |
+| Upload fails with "Request Entity Too Large" | Raise `LimitRequestBody` in `raspedu-cms.conf` (default there: 100 MB). |
+| "Failed to find Server Action" right after an update | The browser still has the old page open: reload it. |
+| The scenario form shows only the Save button | The form entry has no tabs or the id is wrong: see 4.6 and `SCENARIO_SCHEMA_ID`. |
+| Greek text shows as `???` | The database was not created with `utf8mb4` (step 3). |
+| Opening the domain shows another site | `ServerName` in the new site file doesn't match the domain, or another site uses the same name: `sudo apache2ctl -S`. |

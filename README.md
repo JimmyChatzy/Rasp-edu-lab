@@ -1,47 +1,50 @@
 # Raspberry Pi Educational Platform
 
-Minimal educational web platform for Greek primary school teachers to share Raspberry Pi teaching scenarios.
+Educational web platform for Greek primary school teachers to share Raspberry Pi teaching scenarios.
+
+This repository is the **frontend** (Next.js). The content, user accounts and uploaded files live in a separate **Strapi** CMS repository: [Strapi-for-raspbEduLab](https://github.com/JimmyChatzy/Strapi-for-raspbEduLab).
+
+- **Installing on a server:** see [DEPLOYMENT.md](DEPLOYMENT.md).
+- **Review email setup:** see [email-setup-instructions.txt](email-setup-instructions.txt).
 
 ## Features
 
-- Browse and filter teaching scenarios (grade, difficulty, subject)
-- View scenario details
-- Create scenarios (guests and logged-in users)
-- Comment on scenarios (logged-in users only)
-- Simple register / login
-- Dashboard for user-created scenarios
-- Local JSON file storage (`/data`)
+- Browse published teaching scenarios and view their details
+- Register / log in, edit your profile
+- Create, edit and delete your own scenarios (rich text, pictures)
+- Submit a scenario for review; an admin approves it in Strapi
 
 ## Tech Stack
 
-- Next.js (App Router)
-- React + TypeScript
-- Tailwind CSS
-- Server Actions for CRUD
+- Next.js (App Router, Server Actions), React, TypeScript, Tailwind CSS
+- Strapi 5 (REST API, users-permissions, uploads)
 
-## Getting Started
+## Local development
+
+Clone both repositories next to each other:
 
 ```bash
-npm install
-npm run dev
+git clone https://github.com/JimmyChatzy/Rasp-edu-lab.git
+git clone https://github.com/JimmyChatzy/Strapi-for-raspbEduLab.git
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Strapi (uses SQLite in development):
 
-## Data Files
+```bash
+cd Strapi-for-raspbEduLab
+cp .env.example .env      # fill in the secrets
+npm install
+npm run develop           # http://localhost:1337/admin
+```
 
-- `data/scenarios.json` — teaching scenarios
-- `data/comments.json` — scenario comments
-- `data/users.json` — registered users
+Frontend:
 
-## Guest vs Logged-in Users
-
-| Action | Guest | Logged-in |
-|--------|-------|-----------|
-| View scenarios | Yes | Yes |
-| Create scenarios | Yes | Yes |
-| Post comments | No | Yes |
-| Dashboard | No | Yes |
+```bash
+cd Rasp-edu-lab
+cp .env.example .env.local
+npm install
+npm run dev               # http://localhost:3000
+```
 
 ## Language
 
